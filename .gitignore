@@ -82,13 +82,63 @@ Thumbs.db
 desktop.ini
 
 # ============================
-# Específicos deste projeto
+# Dados sensíveis da Ibeize
 # ============================
-# Planilhas e dados reais (não versionar dados de produção)
-data/*.xlsx
-data/*.csv
-!data/.gitkeep
+# Planilhas e CSVs em QUALQUER pasta — base de produtos, clientes,
+# pedidos, custos, exportações da Nuvemshop/GestãoClick, etc.
+*.xlsx
+*.xls
+*.xlsm
+*.ods
+*.csv
+*.tsv
+*.parquet
+*.feather
 
+# Arquivos temporários/lock do Excel (criados quando a planilha está aberta)
+~$*
+
+# Manter os .gitkeep das pastas data/ em backend/ e raiz
+!**/.gitkeep
+
+# Dumps, backups e exports de banco
+*.sql
+*.dump
+*.dump.gz
+*.bak
+*.backup
+backup/
+backups/
+dumps/
+exports/
+
+# Credenciais, tokens, chaves privadas
+# (não confiar só no .env — pessoas baixam JSONs de service accounts, etc.)
+credentials.json
+credentials.*.json
+service-account*.json
+service_account*.json
+*-credentials.json
+*.token
+*.tokens
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# Pastas privadas / rascunho — para notas que NÃO devem ir pro git
+private/
+scratch/
+notes/
+sandbox/
+
+# Mídia enviada pelo admin (imagens de produtos, comprovantes, etc.)
+# já coberto na seção Django acima — backend/media/
+
+# ============================
 # Logs
+# ============================
 *.log
 logs/
