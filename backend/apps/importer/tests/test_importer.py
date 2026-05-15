@@ -83,3 +83,36 @@ class ImportadorTestCase(TestCase):
         v = Variacao.objects.get(sku_nuvemshop="SKU-EXISTE")
         self.assertEqual(v.custo, Decimal("99.99"))
         self.assertEqual(v.preco_site, Decimal("149.99"))
+
+    def test_importar_linha_sem_sku(self):
+        """Linha sem SKU é importada normalmente (SKU vazio)."""
+        caminho = criar_planilha_teste([self._linha(**{
+            "[SKU - NUVEMSHOP] - [ID GESTAOCLICK]": "______",
+            "DESCRICAO_PRODUTO_SITE": "GARRAFA TERMICA INFANTIL",
+            "VARIACOES_PRODUTO": "AZUL",
+        })])
+        rel = ImportadorPlanilha(caminho, self.console).executar()
+        self.assertEqual(rel.linhas_puladas, 0)
+        self.assertEqual(rel.variacoes_criadas, 1)
+        v = Variacao.objects.get(produto__nome_site="GARRAFA TERMICA INFANTIL")
+        self.assertEqual(v.sku_nuvemshop, "")
+        self.assertEqual(v.descricao, "AZUL")
+
+    def test_multiplas_variacoes_sem_sku_no_mesmo_produto(self):
+        """Mesmo produto pode ter várias variações sem SKU, diferenciadas por descrição."""
+        caminho = criar_planilha_teste([
+            self._linha(**{
+                "[SKU - NUVEMSHOP] - [ID GESTAOCLICK]": "______",
+                "DESCRICAO_PRODUTO_SITE": "GARRAFA TERMICA",
+                "VARIACOES_PRODUTO": "AZUL",
+            }),
+            self._linha(**{
+                "[SKU - NUVEMSHOP] - [ID GESTAOCLICK]": "______",
+                "DESCRICAO_PRODUTO_SITE": "GARRAFA TERMICA",
+                "VARIACOES_PRODUTO": "ROSA",
+            }),
+        ])
+        rel = ImportadorPlanilha(caminho, self.console).executar()
+        self.assertEqual(rel.linhas_puladas, 0)
+        self.assertEqual(rel.produtos_criados, 1)
+        self.assertEqual(rel.variacoes_criadas, 2)

@@ -43,17 +43,3 @@ class VariacaoTestCase(TestCase):
         )
         self.assertIsNone(v.margem)
 
-    def test_sku_unico(self):
-        Variacao.objects.create(
-            produto=self.produto,
-            sku_nuvemshop="DUPLICADO",
-            custo=Decimal("1.00"),
-            preco_loja=Decimal("2.00"),
-        )
-        with self.assertRaises(Exception):
-            Variacao.objects.create(
-                produto=self.produto,
-                sku_nuvemshop="DUPLICADO",
-                custo=Decimal("3.00"),
-                preco_loja=Decimal("4.00"),
-            )

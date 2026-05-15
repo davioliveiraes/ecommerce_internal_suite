@@ -23,7 +23,8 @@ class Variacao(TimestampedModel, SoftDeleteModel):
     )
     sku_nuvemshop = models.CharField(
         max_length=50,
-        unique=True,
+        blank=True,
+        default="",
         verbose_name="SKU Nuvemshop",
     )
     id_gestaoclick = models.CharField(

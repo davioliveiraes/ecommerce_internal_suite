@@ -34,14 +34,12 @@ class ImportadorPlanilha:
         sku = parse_sku(linha["sku_nuvemshop"])
         nome_site = parse_string(linha["nome_site"])
 
-        if not sku:
-            self.relatorio.registrar_erro(linha_excel, "", nome_site, "SKU vazio")
-            return
         if not nome_site:
             self.relatorio.registrar_erro(linha_excel, sku, "", "Descrição do site vazia")
             return
 
         nome_gestaoclick = parse_string(linha["nome_gestaoclick"]) or nome_site
+        descricao_variacao = parse_string(linha["descricao_variacao"])
 
         try:
             custo = parse_decimal(linha["custo"])
@@ -71,21 +69,32 @@ class ImportadorPlanilha:
         if criado:
             self.relatorio.produtos_criados += 1
 
-        _, variacao_criada = Variacao.objects.update_or_create(
-            sku_nuvemshop=sku,
-            defaults={
-                "produto": produto,
-                "id_gestaoclick": parse_sku(linha["sku_nuvemshop"]),
-                "codigo_barras": parse_sku(linha["codigo_barras"]),
-                "descricao": parse_string(linha["descricao_variacao"]),
-                "custo": custo,
-                "preco_loja": preco_loja,
-                "preco_site": preco_site,
-                "status_nuvemshop": parse_status(linha["status_nuvemshop"]),
-                "status_integracao": parse_status(linha["status_integracao"]),
-                "ativo": True,
-            },
-        )
+        defaults = {
+            "produto": produto,
+            "id_gestaoclick": parse_sku(linha["sku_nuvemshop"]),
+            "codigo_barras": parse_sku(linha["codigo_barras"]),
+            "descricao": descricao_variacao,
+            "custo": custo,
+            "preco_loja": preco_loja,
+            "preco_site": preco_site,
+            "status_nuvemshop": parse_status(linha["status_nuvemshop"]),
+            "status_integracao": parse_status(linha["status_integracao"]),
+            "ativo": True,
+        }
+
+        if sku:
+            _, variacao_criada = Variacao.objects.update_or_create(
+                sku_nuvemshop=sku,
+                defaults=defaults,
+            )
+        else:
+            defaults["sku_nuvemshop"] = ""
+            _, variacao_criada = Variacao.objects.update_or_create(
+                produto=produto,
+                descricao=descricao_variacao,
+                sku_nuvemshop="",
+                defaults=defaults,
+            )
 
         if variacao_criada:
             self.relatorio.variacoes_criadas += 1
