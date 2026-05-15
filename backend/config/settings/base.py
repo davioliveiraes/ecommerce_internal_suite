@@ -22,6 +22,8 @@ INSTALLED_APPS = [
     # Third-party
     "corsheaders",
     "ninja",
+    # Local apps
+    "catalog",
 ]
 
 MIDDLEWARE = [
@@ -80,3 +82,5 @@ CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:5173", "http://127.0.0.1:5173"],
 )
+
+TEST_RUNNER = "config.test_runner.IbeizeTestRunner"

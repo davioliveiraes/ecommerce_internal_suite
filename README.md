@@ -85,7 +85,7 @@ API disponível em:
 
 - [x] **Fase 0** — Estrutura base do monorepo
 - [x] **Fase 1** — Setup do backend (Django + Django Ninja)
-- [ ] **Fase 2** — Modelagem do domínio `catalog`
+- [x] **Fase 2** — Modelagem do domínio `catalog`
 - [ ] **Fase 3** — Modelagem do domínio `finance`
 - [ ] **Fase 4** — Endpoints da API
 - [ ] **Fase 5** — Setup do frontend React + Vite
