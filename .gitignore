@@ -1,0 +1,94 @@
+# ============================
+# Python / Django (backend/)
+# ============================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+build/
+dist/
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+ENV/
+
+# Django
+*.sqlite3
+*.sqlite3-journal
+backend/media/
+backend/staticfiles/
+backend/local_settings.py
+
+# Migrations geradas em runtime — manter
+# (todas as migrations VÃO para o git)
+
+# ============================
+# Node / React / Vite (frontend/)
+# ============================
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+.turbo/
+
+# Build outputs
+frontend/build/
+frontend/dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ============================
+# Variáveis de ambiente
+# ============================
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.production.local
+backend/.env
+frontend/.env
+# manter .env.example versionado em ambos os lados
+
+# ============================
+# IDEs
+# ============================
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ============================
+# Sistema operacional
+# ============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================
+# Específicos deste projeto
+# ============================
+# Planilhas e dados reais (não versionar dados de produção)
+data/*.xlsx
+data/*.csv
+!data/.gitkeep
+
+# Logs
+*.log
+logs/
