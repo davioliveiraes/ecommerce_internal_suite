@@ -61,10 +61,30 @@ Copy-Item .env.example backend\.env
 Copy-Item .env.example frontend\.env
 ```
 
+### Backend
+
+```powershell
+cd backend
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements\dev.txt
+Copy-Item ..\.env.example .env
+# Editar .env e gerar DJANGO_SECRET_KEY real:
+# python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+API disponível em:
+- `http://localhost:8000/api/health` — health check
+- `http://localhost:8000/api/docs` — documentação Swagger
+- `http://localhost:8000/admin/` — admin Django
+
 ## Roadmap
 
-- [x] **Fase 0** — Estrutura base do monorepo (esta fase)
-- [ ] **Fase 1** — Setup do backend Django + Ninja
+- [x] **Fase 0** — Estrutura base do monorepo
+- [x] **Fase 1** — Setup do backend (Django + Django Ninja)
 - [ ] **Fase 2** — Modelagem do domínio `catalog`
 - [ ] **Fase 3** — Modelagem do domínio `finance`
 - [ ] **Fase 4** — Endpoints da API
