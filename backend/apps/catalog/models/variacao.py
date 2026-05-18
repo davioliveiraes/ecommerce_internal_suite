@@ -40,7 +40,7 @@ class Variacao(TimestampedModel, SoftDeleteModel):
         verbose_name="código de barras",
     )
     descricao = models.CharField(
-        max_length=255,
+        max_length=500,
         blank=True,
         default="",
         verbose_name="descrição da variação",

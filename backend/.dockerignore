@@ -1,0 +1,17 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+db.sqlite3
+db.sqlite3-journal
+.env
+.git/
+*.log
+data/*.xlsx
+data/*.xls
+data/*.csv
+!data/.gitkeep
