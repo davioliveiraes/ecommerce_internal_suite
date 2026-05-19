@@ -1,22 +1,21 @@
+import { ConstructionState } from '../components/ConstructionState'
+
 export function CatalogoPage() {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      <h1 className="text-3xl font-bold text-slate-800 mb-2">
-        Ibeize Catálogo
+    <div className="max-w-7xl mx-auto px-8 py-16">
+      <div className="kicker mb-4">Módulo 01</div>
+      <h1 className="font-display text-5xl font-light text-ink mb-3">
+        Catálogo
       </h1>
-      <p className="text-slate-600 mb-8">
-        Gerenciamento de produtos
+      <p className="text-ink-2 max-w-2xl mb-16">
+        Tabela editável dos produtos da loja, com variações, preços de
+        custo, preços de venda, margens e status de integração.
       </p>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-        <div className="text-5xl mb-4">🚧</div>
-        <h2 className="text-xl font-semibold text-slate-700 mb-2">
-          Em construção
-        </h2>
-        <p className="text-slate-500">
-          A tabela de produtos com AG Grid será implementada na próxima fase.
-        </p>
-      </div>
+      <ConstructionState
+        title="Tabela em implementação"
+        description="A grade de produtos com AG Grid, edição inline e filtros será entregue na próxima fase."
+      />
     </div>
   )
 }

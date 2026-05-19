@@ -1,22 +1,21 @@
+import { ConstructionState } from '../components/ConstructionState'
+
 export function FinancePage() {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      <h1 className="text-3xl font-bold text-slate-800 mb-2">
-        Ibeize Finance
+    <div className="max-w-7xl mx-auto px-8 py-16">
+      <div className="kicker mb-4">Módulo 02</div>
+      <h1 className="font-display text-5xl font-light text-ink mb-3">
+        Finance
       </h1>
-      <p className="text-slate-600 mb-8">
-        Dashboard financeiro
+      <p className="text-ink-2 max-w-2xl mb-16">
+        Painel de custos, receitas e despesas com séries temporais e
+        indicadores de margem operacional.
       </p>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-        <div className="text-5xl mb-4">📊</div>
-        <h2 className="text-xl font-semibold text-slate-700 mb-2">
-          Em construção
-        </h2>
-        <p className="text-slate-500">
-          O dashboard de custos, receitas e despesas será implementado em fase futura.
-        </p>
-      </div>
+      <ConstructionState
+        title="Dashboard em desenho"
+        description="Os gráficos de custos, receitas e despesas serão entregues em fase futura, após a modelagem do domínio Finance."
+      />
     </div>
   )
 }
