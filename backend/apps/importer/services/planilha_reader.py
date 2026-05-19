@@ -8,9 +8,8 @@ import pandas as pd
 
 COLUNAS_PLANILHA = {
     "[SKU - NUVEMSHOP] - [ID GESTAOCLICK]": "sku_nuvemshop",
-    "CODIGO DE BARRAS": "codigo_barras",
-    "DESCRICAO_PRODUTO_GESTAOCLICK": "nome_gestaoclick",
-    "DESCRICAO_PRODUTO_SITE": "nome_site",
+    "DESCRICAO_PRODUTO_GESTAOCLICK": "descricao_produto_gestaoclick",
+    "DESCRICAO_PRODUTO_SITE": "descricao_produto_site",
     "VARIACOES_PRODUTO": "descricao_variacao",
     "CUSTO_PRODUTO": "custo",
     "PRECO_PRODUTO_LOJA": "preco_loja",

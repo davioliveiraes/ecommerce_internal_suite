@@ -22,6 +22,9 @@ class VariacaoOut(Schema):
     id: int
     produto_id: int
     produto_nome_site: str
+    produto_nome_gestaoclick: str
+    produto_descricao_site: str
+    produto_descricao_gestaoclick: str
     sku_nuvemshop: str
     id_gestaoclick: str
     codigo_barras: str
@@ -39,6 +42,18 @@ class VariacaoOut(Schema):
     @staticmethod
     def resolve_produto_nome_site(obj) -> str:
         return obj.produto.nome_site
+
+    @staticmethod
+    def resolve_produto_nome_gestaoclick(obj) -> str:
+        return obj.produto.nome_gestaoclick
+
+    @staticmethod
+    def resolve_produto_descricao_site(obj) -> str:
+        return obj.produto.descricao_produto_site
+
+    @staticmethod
+    def resolve_produto_descricao_gestaoclick(obj) -> str:
+        return obj.produto.descricao_produto_gestaoclick
 
     @staticmethod
     def resolve_margem_percentual(obj) -> Optional[Decimal]:

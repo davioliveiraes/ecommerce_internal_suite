@@ -12,7 +12,7 @@ from importer.services.importer import ImportadorPlanilha
 
 def criar_planilha_teste(linhas: list[dict]) -> Path:
     colunas = [
-        "[SKU - NUVEMSHOP] - [ID GESTAOCLICK]", "CODIGO DE BARRAS",
+        "[SKU - NUVEMSHOP] - [ID GESTAOCLICK]",
         "DESCRICAO_PRODUTO_GESTAOCLICK", "DESCRICAO_PRODUTO_SITE",
         "VARIACOES_PRODUTO", "CUSTO_PRODUTO", "PRECO_PRODUTO_LOJA",
         "PRECO_PRODUTO_SITE", "MARGEM_PRODUTO_SITE",
@@ -31,7 +31,6 @@ class ImportadorTestCase(TestCase):
     def _linha(self, **overrides):
         base = {
             "[SKU - NUVEMSHOP] - [ID GESTAOCLICK]": "20099680632090001",
-            "CODIGO DE BARRAS": "",
             "DESCRICAO_PRODUTO_GESTAOCLICK": "CABO APPLE",
             "DESCRICAO_PRODUTO_SITE": "CABO CARREGADOR APPLE USB-C",
             "VARIACOES_PRODUTO": "USB-C",
@@ -67,7 +66,8 @@ class ImportadorTestCase(TestCase):
 
     def test_atualizar_sku_existente(self):
         produto = Produto.objects.create(
-            nome_gestaoclick="ANTIGO", nome_site="ANTIGO SITE",
+            descricao_produto_gestaoclick="ANTIGO",
+            descricao_produto_site="ANTIGO SITE",
         )
         Variacao.objects.create(
             produto=produto, sku_nuvemshop="SKU-EXISTE",
@@ -94,7 +94,9 @@ class ImportadorTestCase(TestCase):
         rel = ImportadorPlanilha(caminho, self.console).executar()
         self.assertEqual(rel.linhas_puladas, 0)
         self.assertEqual(rel.variacoes_criadas, 1)
-        v = Variacao.objects.get(produto__nome_site="GARRAFA TERMICA INFANTIL")
+        v = Variacao.objects.get(
+            produto__descricao_produto_site="GARRAFA TERMICA INFANTIL"
+        )
         self.assertEqual(v.sku_nuvemshop, "")
         self.assertEqual(v.descricao, "AZUL")
 

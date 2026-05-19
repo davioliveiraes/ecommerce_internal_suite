@@ -11,7 +11,10 @@ class VariacaoAPITestCase(TestCase):
     def setUp(self):
         self.client = TestClient(api)
         self.produto = Produto.objects.create(
-            nome_gestaoclick="FONE", nome_site="FONE DE OUVIDO",
+            nome_gestaoclick="FONE",
+            nome_site="FONE DE OUVIDO",
+            descricao_produto_gestaoclick="Fone com microfone embutido",
+            descricao_produto_site="Fone de ouvido com microfone para escritório",
         )
 
     def test_create_variacao(self):
@@ -28,6 +31,15 @@ class VariacaoAPITestCase(TestCase):
         data = response.json()
         self.assertEqual(data["sku_nuvemshop"], "SKU001")
         self.assertEqual(data["produto_nome_site"], "FONE DE OUVIDO")
+        self.assertEqual(data["produto_nome_gestaoclick"], "FONE")
+        self.assertEqual(
+            data["produto_descricao_site"],
+            "Fone de ouvido com microfone para escritório",
+        )
+        self.assertEqual(
+            data["produto_descricao_gestaoclick"],
+            "Fone com microfone embutido",
+        )
         # margem = (25 - 10) / 10 * 100 = 150%
         self.assertEqual(Decimal(data["margem_percentual"]), Decimal("150.00"))
 

@@ -32,13 +32,15 @@ class ImportadorPlanilha:
     def _processar_linha(self, linha: dict):
         linha_excel = linha["linha_excel"]
         sku = parse_sku(linha["sku_nuvemshop"])
-        nome_site = parse_string(linha["nome_site"])
+        descricao_site = parse_string(linha["descricao_produto_site"])
 
-        if not nome_site:
+        if not descricao_site:
             self.relatorio.registrar_erro(linha_excel, sku, "", "Descrição do site vazia")
             return
 
-        nome_gestaoclick = parse_string(linha["nome_gestaoclick"]) or nome_site
+        descricao_gestaoclick = (
+            parse_string(linha["descricao_produto_gestaoclick"]) or descricao_site
+        )
         descricao_variacao = parse_string(linha["descricao_variacao"])
 
         try:
@@ -46,7 +48,7 @@ class ImportadorPlanilha:
             if custo is None:
                 raise ValueError("custo vazio")
         except ValueError as e:
-            self.relatorio.registrar_erro(linha_excel, sku, nome_site, f"Custo inválido: {e}")
+            self.relatorio.registrar_erro(linha_excel, sku, descricao_site, f"Custo inválido: {e}")
             return
 
         try:
@@ -54,7 +56,7 @@ class ImportadorPlanilha:
             if preco_loja is None:
                 raise ValueError("preço de loja vazio")
         except ValueError as e:
-            self.relatorio.registrar_erro(linha_excel, sku, nome_site, f"Preço de loja inválido: {e}")
+            self.relatorio.registrar_erro(linha_excel, sku, descricao_site, f"Preço de loja inválido: {e}")
             return
 
         try:
@@ -62,17 +64,18 @@ class ImportadorPlanilha:
         except ValueError:
             preco_site = None
 
-        produto, criado = Produto.objects.get_or_create(
-            nome_gestaoclick=nome_gestaoclick,
-            nome_site=nome_site,
+        produto, criado = Produto.objects.update_or_create(
+            descricao_produto_site=descricao_site,
+            defaults={
+                "descricao_produto_gestaoclick": descricao_gestaoclick,
+            },
         )
         if criado:
             self.relatorio.produtos_criados += 1
 
         defaults = {
             "produto": produto,
-            "id_gestaoclick": parse_sku(linha["sku_nuvemshop"]),
-            "codigo_barras": parse_sku(linha["codigo_barras"]),
+            "id_gestaoclick": sku,
             "descricao": descricao_variacao,
             "custo": custo,
             "preco_loja": preco_loja,

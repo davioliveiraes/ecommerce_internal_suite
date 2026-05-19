@@ -1,21 +1,20 @@
-import { ConstructionState } from '../components/ConstructionState'
+import { CatalogoGrid } from '../components/catalogo/CatalogoGrid'
 
 export function CatalogoPage() {
   return (
-    <div className="max-w-7xl mx-auto px-8 py-16">
-      <div className="kicker mb-4">Módulo 01</div>
-      <h1 className="font-display text-5xl font-light text-ink mb-3">
-        Catálogo
-      </h1>
-      <p className="text-ink-2 max-w-2xl mb-16">
-        Tabela editável dos produtos da loja, com variações, preços de
-        custo, preços de venda, margens e status de integração.
-      </p>
+    <div className="max-w-[1600px] mx-auto px-8 py-6">
+      <div className="mb-5">
+        <div className="kicker mb-1.5">Módulo 01</div>
+        <h1 className="font-display text-3xl font-semibold text-black tracking-tight">
+          Catálogo
+        </h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Variações agrupadas por produto. Use a busca, os filtros nas
+          colunas ou expanda os grupos.
+        </p>
+      </div>
 
-      <ConstructionState
-        title="Tabela em implementação"
-        description="A grade de produtos com AG Grid, edição inline e filtros será entregue na próxima fase."
-      />
+      <CatalogoGrid />
     </div>
   )
 }

@@ -79,11 +79,11 @@ class Variacao(TimestampedModel, SoftDeleteModel):
     class Meta:
         verbose_name = "variação"
         verbose_name_plural = "variações"
-        ordering = ["produto__nome_site", "descricao"]
+        ordering = ["produto__descricao_produto_site", "descricao"]
 
     def __str__(self):
         desc = self.descricao or "padrão"
-        return f"{self.produto.nome_site} — {desc}"
+        return f"{self.produto} — {desc}"
 
     @property
     def margem(self) -> Decimal | None:
