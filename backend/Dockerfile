@@ -12,8 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements/ /app/requirements/
-RUN pip install -r requirements/dev.txt
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r requirements.txt
 
 EXPOSE 8000
 

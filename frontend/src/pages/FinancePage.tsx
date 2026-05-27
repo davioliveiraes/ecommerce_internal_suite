@@ -1,89 +1,136 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+
+import { fetchFinanceDashboard } from '../api/financeDashboard'
+import { CategoryPieChart } from '../components/finance-dashboard/CategoryPieChart'
+import { DashboardFilters } from '../components/finance-dashboard/DashboardFilters'
+import { KpiCards } from '../components/finance-dashboard/KpiCards'
+import { TimelineChart } from '../components/finance-dashboard/TimelineChart'
 
 export function FinancePage() {
+  const [dataInicio, setDataInicio] = useState(getStartOfCurrentYear())
+  const [dataFim, setDataFim] = useState(getTodayInputValue())
+  const [incluirPendentes, setIncluirPendentes] = useState(false)
+
+  const dashboardQuery = useQuery({
+    queryKey: [
+      'finance-dashboard',
+      { dataInicio, dataFim, incluirPendentes },
+    ],
+    queryFn: () =>
+      fetchFinanceDashboard({
+        data_inicio: dataInicio,
+        data_fim: dataFim,
+        incluir_pendentes: incluirPendentes,
+      }),
+  })
+
+  const clearFilters = () => {
+    setDataInicio('')
+    setDataFim('')
+    setIncluirPendentes(false)
+  }
+
   return (
-    <div className="max-w-7xl mx-auto px-8 py-10">
-      <div className="mb-8">
-        <div className="kicker mb-2">Módulo 02</div>
-        <h1 className="font-display text-4xl font-semibold text-black tracking-tight mb-2">
-          Finance
-        </h1>
-        <p className="text-gray-600 max-w-2xl">
-          Operação financeira com visão de dashboard e controle dos lançamentos
-          de entrada e saída.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gray-200 border border-gray-200">
-        <Link
-          to="/finance/lancamentos"
-          className="group bg-white p-7 hover:bg-orange-soft transition-colors"
-        >
-          <div className="flex items-start justify-between mb-5">
-            <span className="kicker">Lançamentos</span>
-            <IconList />
-          </div>
-          <h2 className="font-display text-2xl font-semibold text-black mb-2 tracking-tight">
-            Lançamentos Financeiros
-          </h2>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            Liste, filtre, cadastre, edite, marque como pago ou arquive
-            receitas, custos e despesas.
-          </p>
-          <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-orange-dark group-hover:gap-3 transition-all">
-            Acessar lançamentos
-            <ArrowRight />
-          </span>
-        </Link>
-
-        <div className="bg-white p-7">
-          <div className="flex items-start justify-between mb-5">
-            <span className="kicker">Dashboard</span>
-            <IconChart />
-          </div>
-          <h2 className="font-display text-2xl font-semibold text-black mb-2 tracking-tight">
-            Indicadores
-          </h2>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            Resumo financeiro consolidado por período, tipo e status para apoio
-            à gestão operacional.
+    <div className="max-w-[1600px] mx-auto px-8 py-6">
+      <div className="flex items-start justify-between gap-6 mb-5">
+        <div className="min-w-0">
+          <div className="kicker mb-1.5">Módulo 02</div>
+          <h1 className="font-display text-3xl font-semibold text-black tracking-tight">
+            Dashboard Financeiro
+          </h1>
+          <p className="text-sm text-gray-600 mt-1 max-w-3xl">
+            Resultado consolidado dos lançamentos financeiros, com visão mensal
+            e distribuição das saídas por categoria.
           </p>
         </div>
+
+        <Link
+          to="/finance/lancamentos"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-orange bg-orange text-white hover:bg-orange-dark hover:border-orange-dark transition-colors shrink-0"
+        >
+          <IconList />
+          Lançamentos
+        </Link>
+      </div>
+
+      <div className="space-y-5">
+        <DashboardFilters
+          dataInicio={dataInicio}
+          dataFim={dataFim}
+          incluirPendentes={incluirPendentes}
+          onDataInicioChange={setDataInicio}
+          onDataFimChange={setDataFim}
+          onIncluirPendentesChange={setIncluirPendentes}
+          onClear={clearFilters}
+        />
+
+        {dashboardQuery.isError && (
+          <div className="border border-orange/40 bg-orange-soft px-6 py-5">
+            <div className="kicker mb-2">Erro</div>
+            <h3 className="font-display text-lg font-semibold text-black mb-1">
+              Falha ao carregar dashboard
+            </h3>
+            <p className="text-sm text-gray-600">
+              {(dashboardQuery.error as Error)?.message || 'Erro desconhecido'}
+            </p>
+          </div>
+        )}
+
+        {dashboardQuery.isLoading && (
+          <div className="border border-gray-200 bg-white px-6 py-16 text-center font-mono text-sm text-gray-600">
+            carregando dashboard...
+          </div>
+        )}
+
+        {dashboardQuery.data && (
+          <>
+            <KpiCards kpis={dashboardQuery.data.kpis} />
+
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.75fr)] gap-5">
+              <TimelineChart data={dashboardQuery.data.serie_mensal} />
+              <CategoryPieChart
+                despesas={dashboardQuery.data.despesas_por_categoria}
+                custos={dashboardQuery.data.custos_por_categoria}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
 }
 
+function getTodayInputValue() {
+  const date = new Date()
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
+  return date.toISOString().slice(0, 10)
+}
+
+function getStartOfCurrentYear() {
+  const date = new Date()
+  return `${date.getFullYear()}-01-01`
+}
+
 function IconList() {
   return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-orange">
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M8 6h13" />
       <path d="M8 12h13" />
       <path d="M8 18h13" />
       <path d="M3 6h.01" />
       <path d="M3 12h.01" />
       <path d="M3 18h.01" />
-    </svg>
-  )
-}
-
-function IconChart() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-orange">
-      <path d="M3 21h18" />
-      <path d="M6 18V10" />
-      <path d="M11 18V6" />
-      <path d="M16 18v-5" />
-      <path d="M21 18v-9" />
-    </svg>
-  )
-}
-
-function ArrowRight() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <path d="M5 12h14" />
-      <path d="m13 6 6 6-6 6" />
     </svg>
   )
 }

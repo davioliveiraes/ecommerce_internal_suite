@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearAuthToken, getAuthToken } from './tokenStorage'
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -8,9 +9,20 @@ export const apiClient = axios.create({
   timeout: 10000,
 })
 
+apiClient.interceptors.request.use((config) => {
+  const token = getAuthToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 401) {
+      clearAuthToken()
+    }
     console.error('API Error:', error.message)
     return Promise.reject(error)
   },

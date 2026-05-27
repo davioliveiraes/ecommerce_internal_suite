@@ -1,15 +1,14 @@
 from decimal import Decimal
 
 from django.test import TestCase
-from ninja.testing import TestClient
 
 from catalog.models import Marca, Categoria, Subcategoria, Produto
-from config.api import api
+from config.testing import create_authenticated_client
 
 
 class ProdutoAPITestCase(TestCase):
     def setUp(self):
-        self.client = TestClient(api)
+        self.client, self.user = create_authenticated_client()
         self.marca = Marca.objects.create(nome="GET", slug="get")
         self.categoria = Categoria.objects.create(nome="Fones", slug="fones")
         self.subcategoria = Subcategoria.objects.create(

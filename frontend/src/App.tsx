@@ -7,6 +7,8 @@ import {
 } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+import { AuthProvider } from './contexts/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
 import { Topbar } from './components/Topbar'
 import { HomePage } from './pages/HomePage'
 import { CatalogoPage } from './pages/CatalogoPage'
@@ -15,6 +17,7 @@ import { VariacaoRedirect } from './pages/VariacaoRedirect'
 import { FinancePage } from './pages/FinancePage'
 import { LancamentosFinanceirosPage } from './pages/LancamentosFinanceirosPage'
 import { LancamentoFinanceiroEditorPage } from './pages/LancamentoFinanceiroEditorPage'
+import { LoginPage } from './pages/LoginPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,26 +45,35 @@ function LegacyProdutoRedirect() {
 }
 
 const router = createBrowserRouter([
+  { path: '/login', element: <LoginPage /> },
   {
-    element: <RootLayout />,
+    element: <ProtectedRoute />,
     children: [
-      { path: '/', element: <HomePage /> },
-      { path: '/catalogo', element: <CatalogoPage /> },
-      { path: '/catalogo/produto/:id', element: <ProdutoEditorPage /> },
       {
-        path: '/catalogo/produtos/:id/editar',
-        element: <LegacyProdutoRedirect />,
-      },
-      { path: '/catalogo/variacao/:id', element: <VariacaoRedirect /> },
-      { path: '/finance', element: <FinancePage /> },
-      { path: '/finance/lancamentos', element: <LancamentosFinanceirosPage /> },
-      {
-        path: '/finance/lancamentos/novo',
-        element: <LancamentoFinanceiroEditorPage />,
-      },
-      {
-        path: '/finance/lancamentos/:id/editar',
-        element: <LancamentoFinanceiroEditorPage />,
+        element: <RootLayout />,
+        children: [
+          { path: '/', element: <HomePage /> },
+          { path: '/catalogo', element: <CatalogoPage /> },
+          { path: '/catalogo/produto/:id', element: <ProdutoEditorPage /> },
+          {
+            path: '/catalogo/produtos/:id/editar',
+            element: <LegacyProdutoRedirect />,
+          },
+          { path: '/catalogo/variacao/:id', element: <VariacaoRedirect /> },
+          { path: '/finance', element: <FinancePage /> },
+          {
+            path: '/finance/lancamentos',
+            element: <LancamentosFinanceirosPage />,
+          },
+          {
+            path: '/finance/lancamentos/novo',
+            element: <LancamentoFinanceiroEditorPage />,
+          },
+          {
+            path: '/finance/lancamentos/:id/editar',
+            element: <LancamentoFinanceiroEditorPage />,
+          },
+        ],
       },
     ],
   },
@@ -70,7 +82,9 @@ const router = createBrowserRouter([
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </QueryClientProvider>
   )
 }

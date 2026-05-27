@@ -1,5 +1,7 @@
 from ninja import NinjaAPI
 
+from .auth import auth
+from .auth_router import router as auth_router
 from catalog.routers import (
     marca_router,
     categoria_router,
@@ -26,12 +28,14 @@ def health(request):
     return {"status": "ok"}
 
 
-api.add_router("/catalog/marcas", marca_router)
-api.add_router("/catalog/categorias", categoria_router)
-api.add_router("/catalog/subcategorias", subcategoria_router)
-api.add_router("/catalog/produtos", produto_router)
-api.add_router("/catalog/variacoes", variacao_router)
+api.add_router("/auth", auth_router)
 
-api.add_router("/finance/categorias", finance_categoria_router)
-api.add_router("/finance/lancamentos", finance_lancamento_router)
-api.add_router("/finance/dashboard", finance_dashboard_router)
+api.add_router("/catalog/marcas", marca_router, auth=auth)
+api.add_router("/catalog/categorias", categoria_router, auth=auth)
+api.add_router("/catalog/subcategorias", subcategoria_router, auth=auth)
+api.add_router("/catalog/produtos", produto_router, auth=auth)
+api.add_router("/catalog/variacoes", variacao_router, auth=auth)
+
+api.add_router("/finance/categorias", finance_categoria_router, auth=auth)
+api.add_router("/finance/lancamentos", finance_lancamento_router, auth=auth)
+api.add_router("/finance/dashboard", finance_dashboard_router, auth=auth)

@@ -42,3 +42,37 @@ export interface LancamentoFinanceiroFilters {
   data_inicio?: string
   data_fim?: string
 }
+
+export interface FinanceKpis {
+  custo_total: string
+  receita_total: string
+  despesa_total: string
+  lucro: string
+}
+
+export interface FinancePontoMensal {
+  mes: string
+  custo: string
+  receita: string
+  despesa: string
+}
+
+export interface FinanceFatiaCategoria {
+  categoria_id: number | null
+  categoria_nome: string
+  categoria_cor_hex: string
+  valor: string
+}
+
+export interface FinanceDashboard {
+  kpis: FinanceKpis
+  serie_mensal: FinancePontoMensal[]
+  despesas_por_categoria: FinanceFatiaCategoria[]
+  custos_por_categoria: FinanceFatiaCategoria[]
+}
+
+export interface FinanceDashboardFilters {
+  data_inicio?: string
+  data_fim?: string
+  incluir_pendentes?: boolean
+}

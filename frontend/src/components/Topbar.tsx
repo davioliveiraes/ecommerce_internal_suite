@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 
 const NAV = [
   { to: '/', label: 'Início' },
@@ -8,6 +9,7 @@ const NAV = [
 
 export function Topbar() {
   const { pathname } = useLocation()
+  const { user, logout } = useAuth()
 
   return (
     <header className="border-b border-gray-200 bg-white/85 backdrop-blur sticky top-0 z-10">
@@ -16,28 +18,46 @@ export function Topbar() {
           <img src="/brand/logo_ibeize.png" alt="Ibeize" className="h-9 w-auto" />
         </Link>
 
-        <nav className="flex items-stretch gap-1">
-          {NAV.map((item) => {
-            const active =
-              item.to === '/'
-                ? pathname === item.to
-                : pathname === item.to || pathname.startsWith(`${item.to}/`)
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="relative px-4 h-16 flex items-center text-sm transition-colors"
-              >
-                <span className={active ? 'text-black font-medium' : 'text-gray-600 hover:text-black'}>
-                  {item.label}
-                </span>
-                {active && (
-                  <span className="absolute left-3 right-3 bottom-0 h-[2px] bg-orange" />
-                )}
-              </Link>
-            )
-          })}
-        </nav>
+        <div className="flex items-center gap-5">
+          <nav className="flex items-stretch gap-1">
+            {NAV.map((item) => {
+              const active =
+                item.to === '/'
+                  ? pathname === item.to
+                  : pathname === item.to || pathname.startsWith(`${item.to}/`)
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="relative px-4 h-16 flex items-center text-sm transition-colors"
+                >
+                  <span className={active ? 'text-black font-medium' : 'text-gray-600 hover:text-black'}>
+                    {item.label}
+                  </span>
+                  {active && (
+                    <span className="absolute left-3 right-3 bottom-0 h-[2px] bg-orange" />
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
+
+          <div className="hidden md:flex items-center gap-3 border-l border-gray-200 pl-5">
+            <div className="text-right">
+              <div className="font-mono text-xs text-gray-600">sessão</div>
+              <div className="text-sm text-black max-w-32 truncate">
+                {user?.first_name || user?.username}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="px-3 py-1.5 text-xs border border-gray-200 text-gray-600 hover:text-black hover:border-gray-400 transition-colors"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
       </div>
     </header>
   )

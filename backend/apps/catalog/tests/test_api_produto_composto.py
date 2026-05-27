@@ -1,15 +1,14 @@
 from decimal import Decimal
 
 from django.test import TestCase
-from ninja.testing import TestClient
 
 from catalog.models import Produto, Variacao
-from config.api import api
+from config.testing import create_authenticated_client
 
 
 class ProdutoComVariacoesTestCase(TestCase):
     def setUp(self):
-        self.client = TestClient(api)
+        self.client, self.user = create_authenticated_client()
         self.produto = Produto.objects.create(
             descricao_produto_site="FONE TESTE",
             descricao_produto_gestaoclick="FONE TESTE GC",

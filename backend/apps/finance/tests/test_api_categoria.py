@@ -1,13 +1,12 @@
 from django.test import TestCase
-from ninja.testing import TestClient
 
 from finance.models import CategoriaFinanceira
-from config.api import api
+from config.testing import create_authenticated_client
 
 
 class CategoriaAPITestCase(TestCase):
     def setUp(self):
-        self.client = TestClient(api)
+        self.client, self.user = create_authenticated_client()
 
     def test_create_categoria(self):
         response = self.client.post(

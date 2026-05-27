@@ -2,15 +2,14 @@ from datetime import date
 from decimal import Decimal
 
 from django.test import TestCase
-from ninja.testing import TestClient
 
 from finance.models import CategoriaFinanceira, LancamentoFinanceiro
-from config.api import api
+from config.testing import create_authenticated_client
 
 
 class LancamentoAPITestCase(TestCase):
     def setUp(self):
-        self.client = TestClient(api)
+        self.client, self.user = create_authenticated_client()
         self.cat = CategoriaFinanceira.objects.create(nome="Frete", slug="frete")
 
     def test_create_lancamento(self):
