@@ -110,5 +110,6 @@ export interface FinanceDashboardFilters {
   data_inicio?: string
   data_fim?: string
   categoria_id?: number | null
+  tipo?: TipoLancamento | ''
   incluir_pendentes?: boolean
 }

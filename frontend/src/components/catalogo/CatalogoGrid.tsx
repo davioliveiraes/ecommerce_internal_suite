@@ -148,6 +148,10 @@ export function CatalogoGrid() {
       paginationPageSize: 50,
       paginationPageSizeSelector: [25, 50, 100, 200],
       quickFilterText: searchText,
+      enableCellTextSelection: true,
+      ensureDomOrder: true,
+      suppressClickEdit: true,
+      singleClickEdit: false,
       localeText: {
         page: 'Página',
         to: 'até',

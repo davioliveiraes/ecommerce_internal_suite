@@ -9,23 +9,26 @@ import { DashboardFilters } from '../components/finance-dashboard/DashboardFilte
 import { KpiCards } from '../components/finance-dashboard/KpiCards'
 import { PaymentStatisticsPanel } from '../components/finance-dashboard/PaymentStatisticsPanel'
 import { TimelineChart } from '../components/finance-dashboard/TimelineChart'
+import type { TipoLancamento } from '../types/finance'
 
 export function FinancePage() {
   const [dataInicio, setDataInicio] = useState(getStartOfCurrentYear())
   const [dataFim, setDataFim] = useState(getTodayInputValue())
   const [incluirPendentes, setIncluirPendentes] = useState(false)
   const [categoriaId, setCategoriaId] = useState<number | null>(null)
+  const [tipoCategoria, setTipoCategoria] = useState<TipoLancamento | ''>('')
 
   const dashboardQuery = useQuery({
     queryKey: [
       'finance-dashboard',
-      { dataInicio, dataFim, incluirPendentes, categoriaId },
+      { dataInicio, dataFim, incluirPendentes, categoriaId, tipoCategoria },
     ],
     queryFn: () =>
       fetchFinanceDashboard({
         data_inicio: dataInicio,
         data_fim: dataFim,
         categoria_id: categoriaId,
+        tipo: tipoCategoria,
         incluir_pendentes: incluirPendentes,
       }),
   })
@@ -39,6 +42,7 @@ export function FinancePage() {
     setDataInicio('')
     setDataFim('')
     setCategoriaId(null)
+    setTipoCategoria('')
     setIncluirPendentes(false)
   }
 
@@ -56,13 +60,23 @@ export function FinancePage() {
             </p>
         </div>
 
-        <Link
-          to="/finance/lancamentos"
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-orange bg-orange text-white hover:bg-orange-dark hover:border-orange-dark transition-colors shrink-0"
-        >
-          <IconList />
-          Lançamentos
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 bg-white text-gray-700 hover:border-orange hover:text-orange transition-colors"
+          >
+            <IconHome />
+            Inicio
+          </Link>
+
+          <Link
+            to="/finance/lancamentos"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-orange bg-orange text-white hover:bg-orange-dark hover:border-orange-dark transition-colors"
+          >
+            <IconList />
+            Lançamentos
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-5">
@@ -107,6 +121,8 @@ export function FinancePage() {
                 categorias={categoriasQuery.data || []}
                 selectedCategoriaId={categoriaId}
                 onCategoriaChange={setCategoriaId}
+                selectedTipo={tipoCategoria}
+                onTipoChange={setTipoCategoria}
               />
             </div>
 
@@ -155,6 +171,25 @@ function IconList() {
       <path d="M3 6h.01" />
       <path d="M3 12h.01" />
       <path d="M3 18h.01" />
+    </svg>
+  )
+}
+
+function IconHome() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m3 10.5 9-7 9 7" />
+      <path d="M5 10v10h14V10" />
+      <path d="M9 20v-6h6v6" />
     </svg>
   )
 }

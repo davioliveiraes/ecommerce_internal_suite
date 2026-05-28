@@ -112,3 +112,15 @@ class DashboardAPITestCase(TestCase):
         self.assertEqual(Decimal(data["kpis"]["despesa_total"]), Decimal("20"))
         self.assertEqual(data["despesas_por_categoria"][0]["categoria_nome"], "Marketing")
         self.assertEqual(data["receita_vendas_por_forma_pagamento"], [])
+
+    def test_filtra_por_tipo(self):
+        response = self.client.get("/finance/dashboard/?tipo=RECEITA")
+        data = response.json()
+
+        self.assertEqual(Decimal(data["kpis"]["receita_total"]), Decimal("100"))
+        self.assertEqual(Decimal(data["kpis"]["despesa_total"]), Decimal("0"))
+        self.assertEqual(data["despesas_por_categoria"], [])
+        self.assertEqual(
+            data["receitas_por_categoria"][0]["categoria_nome"],
+            "NuvemShop(NuvemPago)",
+        )

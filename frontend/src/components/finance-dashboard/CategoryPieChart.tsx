@@ -1,6 +1,10 @@
 import { useState } from 'react'
 
-import type { CategoriaFinanceira, FinanceFatiaCategoria } from '../../types/finance'
+import type {
+  CategoriaFinanceira,
+  FinanceFatiaCategoria,
+  TipoLancamento,
+} from '../../types/finance'
 import { formatCurrency } from '../../utils/format'
 
 interface Props {
@@ -10,6 +14,8 @@ interface Props {
   categorias: CategoriaFinanceira[]
   selectedCategoriaId: number | null
   onCategoriaChange: (categoriaId: number | null) => void
+  selectedTipo: TipoLancamento | ''
+  onTipoChange: (tipo: TipoLancamento | '') => void
 }
 
 interface Slice {
@@ -36,8 +42,10 @@ export function CategoryPieChart({
   categorias,
   selectedCategoriaId,
   onCategoriaChange,
+  selectedTipo,
+  onTipoChange,
 }: Props) {
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
   const slices = buildSlices(receitas, despesas, custos)
   const totalEntradas = slices.reduce((acc, slice) => acc + slice.entrada, 0)
   const totalSaidas = slices.reduce((acc, slice) => acc + slice.saida, 0)
@@ -62,21 +70,21 @@ export function CategoryPieChart({
         </div>
       </div>
 
-      <div className="relative mb-5">
+      <div className="relative mb-3">
         <button
           type="button"
           aria-haspopup="listbox"
-          aria-expanded={isFilterOpen}
-          onClick={() => setIsFilterOpen((open) => !open)}
+          aria-expanded={isCategoryOpen}
+          onClick={() => setIsCategoryOpen((open) => !open)}
           className="flex w-full items-center justify-between gap-3 border border-gray-200 bg-white px-3 py-2 text-left text-sm text-black hover:border-orange focus:outline-none focus:border-orange transition-colors"
         >
           <span className="min-w-0 truncate">
             {selectedCategoria ? selectedCategoria.nome : 'Todas as categorias'}
           </span>
-          <IconChevronDown open={isFilterOpen} />
+          <IconChevronDown open={isCategoryOpen} />
         </button>
 
-        {isFilterOpen && (
+        {isCategoryOpen && (
           <div
             role="listbox"
             className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 border border-gray-200 bg-white shadow-lg"
@@ -86,7 +94,7 @@ export function CategoryPieChart({
               active={selectedCategoriaId === null}
               onClick={() => {
                 onCategoriaChange(null)
-                setIsFilterOpen(false)
+                setIsCategoryOpen(false)
               }}
             />
 
@@ -98,12 +106,35 @@ export function CategoryPieChart({
                 active={selectedCategoriaId === categoria.id}
                 onClick={() => {
                   onCategoriaChange(categoria.id)
-                  setIsFilterOpen(false)
+                  setIsCategoryOpen(false)
                 }}
               />
             ))}
           </div>
         )}
+      </div>
+
+      <div className="mb-5 grid grid-cols-4 border border-gray-200 text-sm">
+        <TypeFilterButton
+          label="Todos"
+          active={selectedTipo === ''}
+          onClick={() => onTipoChange('')}
+        />
+        <TypeFilterButton
+          label="Receita"
+          active={selectedTipo === 'RECEITA'}
+          onClick={() => onTipoChange('RECEITA')}
+        />
+        <TypeFilterButton
+          label="Despesa"
+          active={selectedTipo === 'DESPESA'}
+          onClick={() => onTipoChange('DESPESA')}
+        />
+        <TypeFilterButton
+          label="Custo"
+          active={selectedTipo === 'CUSTO'}
+          onClick={() => onTipoChange('CUSTO')}
+        />
       </div>
 
       {slices.length === 0 ? (
@@ -263,6 +294,30 @@ function IconChevronDown({ open }: { open: boolean }) {
     >
       <path d="m6 9 6 6 6-6" />
     </svg>
+  )
+}
+
+function TypeFilterButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`border-r border-gray-200 px-2 py-2 transition-colors last:border-r-0 ${
+        active
+          ? 'bg-orange text-white'
+          : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-orange'
+      }`}
+    >
+      {label}
+    </button>
   )
 }
 

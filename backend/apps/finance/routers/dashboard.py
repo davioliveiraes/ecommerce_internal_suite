@@ -73,6 +73,7 @@ def dashboard(
     data_inicio: Optional[date] = None,
     data_fim: Optional[date] = None,
     categoria_id: Optional[int] = None,
+    tipo: Optional[str] = None,
     incluir_pendentes: bool = False,
 ):
     """
@@ -91,6 +92,8 @@ def dashboard(
         qs = qs.filter(data_lancamento__lte=data_fim)
     if categoria_id is not None:
         qs = qs.filter(categoria_id=categoria_id)
+    if tipo:
+        qs = qs.filter(tipo=tipo)
 
     totais_por_tipo = qs.values("tipo").annotate(total=Sum("valor"))
     mapa_totais = {

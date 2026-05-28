@@ -7,49 +7,58 @@ interface Props {
   parcelas: FinanceMetricaReceitaVendas[]
 }
 
-interface Group {
-  label: string
-  data: FinanceMetricaReceitaVendas[]
-  colorReceita: string
-  colorVendas: string
-}
-
-const WIDTH = 720
-const HEIGHT = 330
-const PADDING = 46
+const MAIN_PAYMENT_METHODS = [
+  { chave: 'PIX', nome: 'Pix' },
+  { chave: 'CARTAO_CREDITO', nome: 'Cartão de crédito' },
+]
 
 export function PaymentStatisticsPanel({
   formaPagamento,
   meioPagamento,
   parcelas,
 }: Props) {
-  const groups: Group[] = [
+  const formas = normalizePaymentMethods(formaPagamento)
+  const hasData = formas.some((item) => parseFloat(item.receita) > 0 || item.vendas > 0)
+  const totalReceita = sumReceita(formaPagamento)
+  const totalVendas = sumVendas(formaPagamento)
+  const summaryCards = [
     {
-      label: 'Forma',
-      data: formaPagamento,
-      colorReceita: '#0ea5b7',
-      colorVendas: '#d6008f',
+      color: '#0ea5b7',
+      title: 'Receita por forma de pagamento',
+      value: formatCurrency(sumReceita(formaPagamento)),
+      details: buildDetails(formas, 'receita'),
     },
     {
-      label: 'Meio',
-      data: meioPagamento,
-      colorReceita: '#9b35a7',
-      colorVendas: '#1d1ee8',
+      color: '#d6008f',
+      title: 'Vendas por forma de pagamento',
+      value: sumVendas(formaPagamento).toLocaleString('pt-BR'),
+      details: buildDetails(formas, 'vendas'),
     },
     {
-      label: 'Parcelas',
-      data: parcelas,
-      colorReceita: '#f59e0b',
-      colorVendas: '#c2412d',
+      color: '#9b35a7',
+      title: 'Receita por meio de pagamento',
+      value: formatCurrency(sumReceita(meioPagamento)),
+      details: buildDetails(meioPagamento, 'receita'),
+    },
+    {
+      color: '#1d1ee8',
+      title: 'Vendas por meio de pagamento',
+      value: sumVendas(meioPagamento).toLocaleString('pt-BR'),
+      details: buildDetails(meioPagamento, 'vendas'),
+    },
+    {
+      color: '#f59e0b',
+      title: 'Receita por quantidade de parcelas',
+      value: formatCurrency(sumReceita(parcelas)),
+      details: buildDetails(parcelas, 'receita'),
+    },
+    {
+      color: '#c2412d',
+      title: 'Vendas por quantidade de parcelas',
+      value: sumVendas(parcelas).toLocaleString('pt-BR'),
+      details: buildDetails(parcelas, 'vendas'),
     },
   ]
-
-  const hasData = groups.some((group) => group.data.length > 0)
-  const totalReceita = groups.reduce(
-    (acc, group) => acc + sumReceita(group.data),
-    0,
-  )
-  const totalVendas = groups.reduce((acc, group) => acc + sumVendas(group.data), 0)
 
   return (
     <section className="border border-gray-200 bg-white p-5">
@@ -71,147 +80,126 @@ export function PaymentStatisticsPanel({
           Sem estatísticas de pagamento no período selecionado.
         </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px] gap-5">
-          <div className="min-w-0">
-            <div className="mb-4">
-              <h3 className="font-display text-lg font-semibold text-black">
-                Seus pagamentos: visão geral
-              </h3>
-              <p className="text-xs text-gray-600 mt-1">
-                Comparativo consolidado entre receita e volume de vendas.
-              </p>
-            </div>
-
-            <PaymentOverviewChart groups={groups} />
+        <>
+          <div className="mb-4">
+            <h3 className="font-display text-lg font-semibold text-black">
+              Seus pagamentos: visão geral
+            </h3>
+            <p className="text-xs text-gray-600 mt-1">
+              Comparativo consolidado entre receita e volume de vendas.
+            </p>
           </div>
 
-          <div className="space-y-3">
-            <SummaryCard
-              color="#0ea5b7"
-              title="Receita por forma de pagamento"
-              value={formatCurrency(sumReceita(formaPagamento))}
-              details={buildDetails(formaPagamento, 'receita')}
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_420px] xl:gap-5">
+            <OverviewCard
+              label="Receita em pagamentos"
+              value={formatCurrency(totalReceita)}
             />
-            <SummaryCard
-              color="#d6008f"
-              title="Vendas por forma de pagamento"
-              value={sumVendas(formaPagamento).toLocaleString('pt-BR')}
-              details={buildDetails(formaPagamento, 'vendas')}
+            <OverviewCard
+              label="Vendas pagas"
+              value={totalVendas.toLocaleString('pt-BR')}
             />
-            <SummaryCard
-              color="#9b35a7"
-              title="Receita por meio de pagamento"
-              value={formatCurrency(sumReceita(meioPagamento))}
-              details={buildDetails(meioPagamento, 'receita')}
-            />
-            <SummaryCard
-              color="#1d1ee8"
-              title="Vendas por meio de pagamento"
-              value={sumVendas(meioPagamento).toLocaleString('pt-BR')}
-              details={buildDetails(meioPagamento, 'vendas')}
-            />
-            <SummaryCard
-              color="#f59e0b"
-              title="Receita por quantidade de parcelas"
-              value={formatCurrency(sumReceita(parcelas))}
-              details={buildDetails(parcelas, 'receita')}
-            />
-            <SummaryCard
-              color="#c2412d"
-              title="Vendas por quantidade de parcelas"
-              value={sumVendas(parcelas).toLocaleString('pt-BR')}
-              details={buildDetails(parcelas, 'vendas')}
-            />
+            <SummaryCard {...summaryCards[0]} />
 
-            <div className="border border-gray-200 bg-gray-50 px-4 py-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Metric label="Receita analisada" value={formatCurrency(totalReceita)} />
-                <Metric
-                  label="Vendas analisadas"
-                  value={totalVendas.toLocaleString('pt-BR')}
-                />
-              </div>
+            <div className="xl:col-span-2 h-full">
+              <PaymentOverviewChart data={formas} />
+            </div>
+
+            <div className="space-y-3">
+              {summaryCards.slice(1).map((card) => (
+                <SummaryCard key={card.title} {...card} />
+              ))}
             </div>
           </div>
-        </div>
+        </>
       )}
     </section>
   )
 }
 
-function PaymentOverviewChart({ groups }: { groups: Group[] }) {
-  const chartWidth = WIDTH - PADDING * 2
-  const chartHeight = HEIGHT - PADDING * 2
-  const maxReceita = Math.max(1, ...groups.map((group) => sumReceita(group.data)))
-  const maxVendas = Math.max(1, ...groups.map((group) => sumVendas(group.data)))
-  const barWidth = 54
+function PaymentOverviewChart({
+  data,
+}: {
+  data: FinanceMetricaReceitaVendas[]
+}) {
+  const maxReceita = Math.max(1, ...data.map((item) => parseFloat(item.receita)))
+  const maxVendas = Math.max(1, ...data.map((item) => item.vendas))
+  const maxChartValue = Math.max(maxReceita, maxVendas)
 
   return (
-    <svg
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+    <div
       role="img"
-      aria-label="Receita e vendas por estatísticas de pagamento"
-      className="w-full h-auto"
+      aria-label="Receita e vendas por forma de pagamento"
+      className="h-full min-h-[430px] border border-gray-200 px-5 pt-6 pb-4"
     >
-      {[0, 0.25, 0.5, 0.75, 1].map((step) => {
-        const y = PADDING + chartHeight - step * chartHeight
-        return (
-          <line
-            key={step}
-            x1={PADDING}
-            x2={WIDTH - PADDING}
-            y1={y}
-            y2={y}
-            stroke="#e5e5e5"
-            strokeWidth="1"
-          />
-        )
-      })}
+      <div
+        className="grid h-[calc(100%-2.25rem)] min-h-[360px] items-end gap-8 border-b border-gray-300"
+        style={{
+          gridTemplateColumns: `repeat(${data.length}, minmax(120px, 1fr))`,
+        }}
+      >
+        {data.map((item) => {
+          const receita = parseFloat(item.receita)
+          const receitaHeight = (receita / maxChartValue) * 100
+          const vendasHeight = (item.vendas / maxChartValue) * 100
 
-      {groups.map((group, index) => {
-        const groupWidth = chartWidth / groups.length
-        const center = PADDING + groupWidth * index + groupWidth / 2
-        const receitaHeight = (sumReceita(group.data) / maxReceita) * chartHeight
-        const vendasHeight = (sumVendas(group.data) / maxVendas) * chartHeight
-
-        return (
-          <g key={group.label}>
-            <rect
-              x={center - barWidth - 5}
-              y={PADDING + chartHeight - receitaHeight}
-              width={barWidth}
-              height={receitaHeight}
-              fill="#9bbfed"
-            />
-            <rect
-              x={center + 5}
-              y={PADDING + chartHeight - vendasHeight}
-              width={barWidth}
-              height={vendasHeight}
-              fill="#c9ddf8"
-            />
-            <text
-              x={center}
-              y={HEIGHT - 14}
-              textAnchor="middle"
-              fill="#737373"
-              fontSize="12"
-              fontFamily="monospace"
+          return (
+            <div
+              key={item.chave}
+              className="flex h-full min-w-0 flex-col"
             >
-              {group.label}
-            </text>
-          </g>
-        )
-      })}
+              <div className="mb-2 grid grid-cols-2 gap-2 text-center font-mono text-[11px] text-gray-600">
+                <span>{formatCurrency(receita)}</span>
+                <span>{item.vendas.toLocaleString('pt-BR')}</span>
+              </div>
 
-      <line
-        x1={PADDING}
-        x2={WIDTH - PADDING}
-        y1={PADDING + chartHeight}
-        y2={PADDING + chartHeight}
-        stroke="#d4d4d4"
+              <div className="flex min-h-0 flex-1 items-end justify-center gap-3">
+                <Bar label="Receita" color="#9bbfed" height={receitaHeight} />
+                <Bar label="Vendas" color="#c9ddf8" height={vendasHeight} />
+              </div>
+
+              <div className="mt-3 truncate text-center font-mono text-sm text-gray-600">
+                {shortLabel(item.nome)}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function OverviewCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-gray-200 bg-gray-50 px-4 py-3">
+      <div className="font-mono text-[10px] uppercase tracking-wider text-gray-600 mb-1">
+        {label}
+      </div>
+      <div className="font-mono text-lg text-black tabular-nums">{value}</div>
+    </div>
+  )
+}
+
+function Bar({
+  label,
+  color,
+  height,
+}: {
+  label: string
+  color: string
+  height: number
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-end gap-1">
+      <div
+        title={label}
+        className="w-20 transition-[height] duration-300"
+        style={{
+          height: `${Math.max(1, height)}%`,
+          backgroundColor: color,
+        }}
       />
-    </svg>
+    </div>
   )
 }
 
@@ -242,15 +230,9 @@ function SummaryCard({
   )
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="font-mono text-[10px] uppercase tracking-wider text-gray-600 mb-1">
-        {label}
-      </div>
-      <div className="font-mono text-sm text-black tabular-nums">{value}</div>
-    </div>
-  )
+function shortLabel(label: string) {
+  if (label === 'Cartão de crédito') return 'Cartão'
+  return label
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
@@ -284,4 +266,24 @@ function buildDetails(
       return `${item.nome}: ${value}`
     })
     .join(' · ')
+}
+
+function normalizePaymentMethods(data: FinanceMetricaReceitaVendas[]) {
+  const mapped = new Map(data.map((item) => [item.chave, item]))
+  const preferred = MAIN_PAYMENT_METHODS.map((method) => {
+    return (
+      mapped.get(method.chave) || {
+        chave: method.chave,
+        nome: method.nome,
+        receita: '0',
+        vendas: 0,
+      }
+    )
+  })
+
+  const extra = data.filter(
+    (item) => !MAIN_PAYMENT_METHODS.some((method) => method.chave === item.chave),
+  )
+
+  return [...preferred, ...extra]
 }
