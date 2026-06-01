@@ -1,19 +1,21 @@
 import { Link } from 'react-router-dom'
 
 import { CatalogoGrid } from '../components/catalogo/CatalogoGrid'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function CatalogoPage() {
+  useDocumentTitle('Catálogo — Ibeize Ecommerce Control')
+
   return (
     <div className="max-w-[1600px] mx-auto px-8 py-6">
       <div className="flex items-start justify-between gap-6 mb-5">
         <div className="min-w-0">
           <div className="kicker mb-1.5">Módulo 01</div>
           <h1 className="font-display text-3xl font-semibold text-black tracking-tight">
-            Catálogo
+            Ibeize Catálogo
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Variações agrupadas por produto. Use a busca, os filtros nas
-            colunas ou expanda os grupos.
+            Gestão dos produtos, variações, preços e integração da loja Ibeize.
           </p>
         </div>
 

@@ -14,6 +14,7 @@ from finance.routers import (
     lancamento_router as finance_lancamento_router,
     dashboard_router as finance_dashboard_router,
 )
+from reports.routers import catalog_report_router, finance_report_router
 
 api = NinjaAPI(
     title="Ibeize Ecommerce Control API",
@@ -39,3 +40,6 @@ api.add_router("/catalog/variacoes", variacao_router, auth=auth)
 api.add_router("/finance/categorias", finance_categoria_router, auth=auth)
 api.add_router("/finance/lancamentos", finance_lancamento_router, auth=auth)
 api.add_router("/finance/dashboard", finance_dashboard_router, auth=auth)
+
+api.add_router("/reports/catalog", catalog_report_router, auth=auth)
+api.add_router("/reports/finance", finance_report_router, auth=auth)

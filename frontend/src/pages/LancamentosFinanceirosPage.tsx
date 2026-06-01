@@ -1,8 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 
 import { LancamentosFinanceirosGrid } from '../components/finance/LancamentosFinanceirosGrid'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function LancamentosFinanceirosPage() {
+  useDocumentTitle('Lançamentos — Ibeize Finance')
+
   const navigate = useNavigate()
 
   return (
@@ -19,7 +22,7 @@ export function LancamentosFinanceirosPage() {
           </button>
           <div className="kicker mb-1.5">Módulo 02</div>
           <h1 className="font-display text-3xl font-semibold text-black tracking-tight">
-            Lançamentos Financeiros
+            Lançamentos — Ibeize Finance
           </h1>
           <p className="text-sm text-gray-600 mt-1">
             Entradas e saídas operacionais com status, categoria e ações de

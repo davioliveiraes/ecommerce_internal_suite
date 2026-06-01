@@ -14,9 +14,12 @@ import {
 } from '../components/produto-editor/schema'
 import { ProdutoSection } from '../components/produto-editor/ProdutoSection'
 import { VariacaoCard } from '../components/produto-editor/VariacaoCard'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning'
 
 export function ProdutoEditorPage() {
+  useDocumentTitle('Editar produto — Ibeize Catálogo')
+
   const { id } = useParams<{ id: string }>()
   const produtoId = Number(id)
   const navigate = useNavigate()
@@ -162,7 +165,7 @@ export function ProdutoEditorPage() {
             </button>
             <div className="kicker mb-2">Módulo 01 · Edição</div>
             <h1 className="font-display text-3xl font-semibold text-black tracking-tight mb-1">
-              Editar produto
+              Editar produto — Ibeize Catálogo
             </h1>
             <p className="text-sm text-gray-600 truncate">
               {produtoQuery.data?.descricao_produto_site}

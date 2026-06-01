@@ -15,6 +15,7 @@ import {
   lancamentoFinanceiroSchema,
   type LancamentoFinanceiroForm,
 } from '../components/lancamento-editor/schema'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning'
 
 function getTodayInputValue() {
@@ -30,6 +31,9 @@ export function LancamentoFinanceiroEditorPage() {
   const isNew = !id
   const lancamentoId = Number(id)
   const isValidId = isNew || (lancamentoId && !isNaN(lancamentoId))
+  useDocumentTitle(
+    isNew ? 'Novo lançamento — Ibeize Finance' : 'Editar lançamento — Ibeize Finance',
+  )
 
   const lancamentoQuery = useQuery({
     queryKey: ['lancamento-financeiro', lancamentoId],

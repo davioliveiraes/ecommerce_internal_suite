@@ -9,7 +9,10 @@ import {
 } from 'ag-grid-community'
 
 import { fetchVariacoes } from '../../api/variacoes'
+import { ExportPdfModal } from '../reports/ExportPdfModal'
+import { useDownloadPdf } from '../../hooks/useDownloadPdf'
 import type { Variacao } from '../../types/catalog'
+import { COLUNAS_CATALOGO } from '../../types/reports'
 import { MoneyCellRenderer } from './MoneyCellRenderer'
 import { PercentCellRenderer } from './PercentCellRenderer'
 import { StatusBadgeRenderer } from './StatusBadgeRenderer'
@@ -23,6 +26,8 @@ import 'ag-grid-community/styles/ag-theme-quartz.css'
 export function CatalogoGrid() {
   const [searchText, setSearchText] = useState('')
   const [incluirInativos, setIncluirInativos] = useState(false)
+  const [isExportOpen, setIsExportOpen] = useState(false)
+  const { download, isDownloading } = useDownloadPdf()
 
   const {
     data: variacoes = [],
@@ -213,6 +218,19 @@ export function CatalogoGrid() {
     [searchText],
   )
 
+  const handleExport = async (colunas: string[]) => {
+    await download(
+      '/reports/catalog/pdf',
+      {
+        colunas,
+        incluir_inativos: incluirInativos,
+        busca: searchText || undefined,
+      },
+      `ibeize-catalogo-${new Date().toISOString().slice(0, 10)}.pdf`,
+    )
+    setIsExportOpen(false)
+  }
+
   if (isError) {
     return (
       <div className="border border-orange/40 bg-orange-soft px-6 py-5">
@@ -250,6 +268,15 @@ export function CatalogoGrid() {
           Incluir inativos
         </label>
 
+        <button
+          type="button"
+          onClick={() => setIsExportOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-orange text-orange hover:bg-orange-soft transition-colors"
+        >
+          <IconDownload />
+          Exportar PDF
+        </button>
+
         <div className="font-mono text-xs text-gray-600 tabular-nums">
           {isLoading
             ? 'carregando...'
@@ -270,6 +297,34 @@ export function CatalogoGrid() {
           getRowId={(params) => String(params.data.id)}
         />
       </div>
+
+      <ExportPdfModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        titulo="Exportar — Ibeize Catálogo"
+        colunasDisponiveis={COLUNAS_CATALOGO}
+        onConfirm={handleExport}
+        isDownloading={isDownloading}
+      />
     </div>
+  )
+}
+
+function IconDownload() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M12 15V3" />
+    </svg>
   )
 }

@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     # Local apps
     "catalog",
     "finance",
+    "reports",
     "importer",
 ]
 

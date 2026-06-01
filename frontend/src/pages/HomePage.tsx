@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchHealth } from '../api/health'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 const MODULES = [
   {
     index: '01',
     to: '/catalogo',
-    title: 'Catálogo',
+    title: 'Ibeize Catálogo',
     description:
       'Base de produtos da loja em tabela editável. Cadastro, variações, preços, margens e integração GestãoClick ↔ Nuvemshop.',
     Icon: IconGrid,
@@ -14,7 +15,7 @@ const MODULES = [
   {
     index: '02',
     to: '/finance',
-    title: 'Finance',
+    title: 'Ibeize Finance',
     description:
       'Painel consolidado de custos, receitas e despesas com séries temporais e indicadores de desempenho.',
     Icon: IconChart,
@@ -22,6 +23,8 @@ const MODULES = [
 ]
 
 export function HomePage() {
+  useDocumentTitle('Ibeize Ecommerce Control')
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['health'],
     queryFn: fetchHealth,
@@ -32,12 +35,17 @@ export function HomePage() {
     <div className="h-[calc(100vh-4rem)] overflow-hidden">
       <div className="h-full max-w-6xl mx-auto px-8 py-10 flex flex-col">
         <div className="text-center pt-2 pb-8 shrink-0">
-          <div className="kicker mb-4">Painel interno · v0.5</div>
+          <div className="text-xs uppercase tracking-widest text-slate-500 mb-4">
+            Sistema interno · Ibeize
+          </div>
 
           <h1 className="font-display whitespace-nowrap font-semibold text-black leading-[1.02] text-[clamp(1.5rem,5vw,4rem)]">
-            Controle de operações da Ibeize<span className="text-orange">.</span>
+            Ibeize Ecommerce Control
           </h1>
 
+          <p className="mt-4 text-lg text-gray-600">
+            Painel interno de gestão da loja Ibeize
+          </p>
           <div className="mx-auto mt-6 h-[2px] w-16 bg-orange" />
         </div>
 

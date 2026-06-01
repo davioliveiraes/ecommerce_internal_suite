@@ -2,8 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../hooks/useAuth'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function LoginPage() {
+  useDocumentTitle('Login — Ibeize Ecommerce Control')
+
   const { isAuthenticated, isLoading, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

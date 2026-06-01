@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { fetchCategoriasFinanceiras } from '../api/categoriasFinanceiras'
 import { fetchFinanceDashboard } from '../api/financeDashboard'
+import { ExportPdfModal } from '../components/reports/ExportPdfModal'
 import {
   CategoryFiltersPanel,
   CategoryPieChart,
@@ -13,14 +14,21 @@ import { KpiCards } from '../components/finance-dashboard/KpiCards'
 import { PaymentStatisticsPanel } from '../components/finance-dashboard/PaymentStatisticsPanel'
 import { StoreOverviewPanel } from '../components/finance-dashboard/StoreOverviewPanel'
 import { TimelineChart } from '../components/finance-dashboard/TimelineChart'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useDownloadPdf } from '../hooks/useDownloadPdf'
 import type { TipoLancamento } from '../types/finance'
+import { COLUNAS_FINANCE } from '../types/reports'
 
 export function FinancePage() {
+  useDocumentTitle('Finance — Ibeize Ecommerce Control')
+
   const [dataInicio, setDataInicio] = useState(getStartOfCurrentYear())
   const [dataFim, setDataFim] = useState(getTodayInputValue())
   const [incluirPendentes, setIncluirPendentes] = useState(false)
   const [categoriaId, setCategoriaId] = useState<number | null>(null)
   const [tipoCategoria, setTipoCategoria] = useState<TipoLancamento | ''>('')
+  const [isExportOpen, setIsExportOpen] = useState(false)
+  const { download, isDownloading } = useDownloadPdf()
 
   const dashboardQuery = useQuery({
     queryKey: [
@@ -51,18 +59,34 @@ export function FinancePage() {
   }
   const visibleTimelineTypes = tipoCategoria ? [tipoCategoria] : undefined
 
+  const handleExport = async (colunas: string[]) => {
+    await download(
+      '/reports/finance/pdf',
+      {
+        colunas,
+        data_inicio: dataInicio || undefined,
+        data_fim: dataFim || undefined,
+        tipo: tipoCategoria || undefined,
+        categoria_id: categoriaId ?? undefined,
+        status: incluirPendentes ? undefined : 'PAGO',
+      },
+      `ibeize-finance-dashboard-${new Date().toISOString().slice(0, 10)}.pdf`,
+    )
+    setIsExportOpen(false)
+  }
+
   return (
     <div className="max-w-[1600px] mx-auto px-8 py-6">
       <div className="flex items-start justify-between gap-6 mb-5">
         <div className="min-w-0">
           <div className="kicker mb-1.5">Módulo 02</div>
           <h1 className="font-display text-3xl font-semibold text-black tracking-tight">
-            Dashboard Financeiro
+            Dashboard — Ibeize Finance
           </h1>
-            <p className="text-sm text-gray-600 mt-1 max-w-3xl">
-              Resultado consolidado dos lançamentos financeiros, com visão mensal
-              e estatísticas de categorias e pagamentos.
-            </p>
+          <p className="text-sm text-gray-600 mt-1 max-w-3xl">
+            Resultado consolidado dos lançamentos financeiros, com visão mensal
+            e estatísticas de categorias e pagamentos.
+          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -73,6 +97,15 @@ export function FinancePage() {
             <IconHome />
             Inicio
           </Link>
+
+          <button
+            type="button"
+            onClick={() => setIsExportOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-orange text-orange hover:bg-orange-soft transition-colors"
+          >
+            <IconDownload />
+            Exportar PDF
+          </button>
 
           <Link
             to="/finance/lancamentos"
@@ -157,6 +190,15 @@ export function FinancePage() {
           </>
         )}
       </div>
+
+      <ExportPdfModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        titulo="Relatório — Ibeize Finance"
+        colunasDisponiveis={COLUNAS_FINANCE}
+        onConfirm={handleExport}
+        isDownloading={isDownloading}
+      />
     </div>
   )
 }
@@ -209,6 +251,25 @@ function IconHome() {
       <path d="m3 10.5 9-7 9 7" />
       <path d="M5 10v10h14V10" />
       <path d="M9 20v-6h6v6" />
+    </svg>
+  )
+}
+
+function IconDownload() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M12 15V3" />
     </svg>
   )
 }

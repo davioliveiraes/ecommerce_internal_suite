@@ -31,6 +31,7 @@ pydantic==2.13.4
 pydantic_core==2.46.4
 Pygments==2.20.0
 python-dateutil==2.9.0.post0
+reportlab>=4.2
 rich==15.0.0
 six==1.17.0
 sqlparse==0.5.5
