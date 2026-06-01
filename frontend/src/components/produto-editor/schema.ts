@@ -27,6 +27,7 @@ export const variacaoSchema = z.object({
   custo: decimalString,
   preco_loja: decimalString,
   preco_site: decimalStringOpcional,
+  preco_promocional: decimalStringOpcional,
   status_nuvemshop: z.enum(['ATIVO', 'INATIVO']),
   status_integracao: z.enum(['ATIVO', 'INATIVO']),
   ativo: z.boolean(),

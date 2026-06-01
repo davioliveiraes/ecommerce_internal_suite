@@ -51,6 +51,7 @@ class ProdutoComVariacoesTestCase(TestCase):
                 "custo": "15.00",
                 "preco_loja": "30.00",
                 "preco_site": "40.00",
+                "preco_promocional": "35.00",
                 "status_nuvemshop": "ATIVO",
                 "status_integracao": "ATIVO",
                 "ativo": True,
@@ -66,6 +67,7 @@ class ProdutoComVariacoesTestCase(TestCase):
         self.assertEqual(self.produto.descricao_produto_site, "FONE EDITADO")
         self.assertEqual(self.v1.sku_nuvemshop, "SKU-1-NOVO")
         self.assertEqual(self.v1.custo, Decimal("15.00"))
+        self.assertEqual(self.v1.preco_promocional, Decimal("35.00"))
 
     def test_cria_nova_variacao(self):
         payload = self._payload_base()
@@ -76,6 +78,7 @@ class ProdutoComVariacoesTestCase(TestCase):
                 "custo": "8.00",
                 "preco_loja": "18.00",
                 "preco_site": None,
+                "preco_promocional": "15.00",
                 "status_nuvemshop": "ATIVO",
                 "status_integracao": "ATIVO",
                 "ativo": True,

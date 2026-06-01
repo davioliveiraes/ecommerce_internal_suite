@@ -66,6 +66,7 @@ class VariacaoInComposto(Schema):
     custo: Decimal
     preco_loja: Decimal
     preco_site: Optional[Decimal] = None
+    preco_promocional: Optional[Decimal] = None
     status_nuvemshop: str = "ATIVO"
     status_integracao: str = "ATIVO"
     ativo: bool = True

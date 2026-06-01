@@ -15,6 +15,8 @@ export interface Variacao {
   preco_loja: string
   preco_site: string | null
   margem_percentual: string | null
+  preco_promocional: string | null
+  margem_promocional_percentual: string | null
   status_nuvemshop: Status
   status_integracao: Status
   ativo: boolean
@@ -69,6 +71,7 @@ export interface VariacaoComposta {
   custo: string
   preco_loja: string
   preco_site: string | null
+  preco_promocional: string | null
   status_nuvemshop: Status
   status_integracao: Status
   ativo: boolean

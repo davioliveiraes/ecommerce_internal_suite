@@ -80,6 +80,7 @@ export function ProdutoEditorPage() {
           custo: v.custo,
           preco_loja: v.preco_loja,
           preco_site: v.preco_site,
+          preco_promocional: v.preco_promocional,
           status_nuvemshop: v.status_nuvemshop,
           status_integracao: v.status_integracao,
           ativo: v.ativo,
@@ -97,6 +98,8 @@ export function ProdutoEditorPage() {
         variacoes: data.variacoes.map((v) => ({
           ...v,
           preco_site: v.preco_site === '' ? null : v.preco_site,
+          preco_promocional:
+            v.preco_promocional === '' ? null : v.preco_promocional,
         })),
       }),
     onSuccess: () => {
@@ -219,6 +222,7 @@ export function ProdutoEditorPage() {
                   custo: '0',
                   preco_loja: '0',
                   preco_site: null,
+                  preco_promocional: null,
                   status_nuvemshop: 'ATIVO',
                   status_integracao: 'ATIVO',
                   ativo: true,

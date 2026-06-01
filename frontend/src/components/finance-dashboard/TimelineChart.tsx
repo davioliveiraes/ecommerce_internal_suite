@@ -1,8 +1,9 @@
-import type { FinancePontoMensal } from '../../types/finance'
+import type { FinancePontoMensal, TipoLancamento } from '../../types/finance'
 import { formatCurrency } from '../../utils/format'
 
 interface Props {
   data: FinancePontoMensal[]
+  visibleTypes?: TipoLancamento[]
 }
 
 const WIDTH = 720
@@ -15,7 +16,18 @@ const SERIES = [
   { key: 'despesa', label: 'Despesa', color: '#0a0a0a' },
 ] as const
 
-export function TimelineChart({ data }: Props) {
+const TYPE_TO_SERIES_KEY: Record<TipoLancamento, (typeof SERIES)[number]['key']> = {
+  RECEITA: 'receita',
+  CUSTO: 'custo',
+  DESPESA: 'despesa',
+}
+
+export function TimelineChart({ data, visibleTypes }: Props) {
+  const visibleKeys = visibleTypes?.map((tipo) => TYPE_TO_SERIES_KEY[tipo])
+  const activeSeries = visibleKeys
+    ? SERIES.filter((serie) => visibleKeys.includes(serie.key))
+    : SERIES
+
   const parsed = data.map((point) => ({
     mes: point.mes,
     receita: parseFloat(point.receita),
@@ -25,7 +37,7 @@ export function TimelineChart({ data }: Props) {
 
   const maxValue = Math.max(
     1,
-    ...parsed.flatMap((point) => [point.receita, point.custo, point.despesa]),
+    ...parsed.flatMap((point) => activeSeries.map((serie) => point[serie.key])),
   )
   const chartWidth = WIDTH - PADDING * 2
   const chartHeight = HEIGHT - PADDING * 2
@@ -48,7 +60,7 @@ export function TimelineChart({ data }: Props) {
           </h2>
         </div>
         <div className="flex flex-wrap justify-end gap-3">
-          {SERIES.map((serie) => (
+          {activeSeries.map((serie) => (
             <span
               key={serie.key}
               className="inline-flex items-center gap-1.5 text-xs text-gray-600"
@@ -70,7 +82,7 @@ export function TimelineChart({ data }: Props) {
           <svg
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
             role="img"
-            aria-label="Evolução mensal de receitas, custos e despesas"
+            aria-label="Evolução mensal financeira"
             className="w-full h-auto"
           >
             {[0, 0.25, 0.5, 0.75, 1].map((step) => {
@@ -98,7 +110,7 @@ export function TimelineChart({ data }: Props) {
               )
             })}
 
-            {SERIES.map((serie) => {
+            {activeSeries.map((serie) => {
               const d = parsed
                 .map((point, index) => {
                   const value = point[serie.key]

@@ -95,9 +95,25 @@ export function CatalogoGrid() {
         type: 'numericColumn',
       },
       {
+        field: 'preco_promocional',
+        headerName: 'Preço Promocional',
+        minWidth: 150,
+        cellClass: 'promo-price-cell',
+        cellRenderer: MoneyCellRenderer,
+        type: 'numericColumn',
+      },
+      {
         field: 'margem_percentual',
         headerName: 'Margem %',
         minWidth: 110,
+        cellRenderer: PercentCellRenderer,
+        type: 'numericColumn',
+      },
+      {
+        field: 'margem_promocional_percentual',
+        headerName: 'Margem Promoção',
+        minWidth: 145,
+        cellClass: 'promo-margin-cell',
         cellRenderer: PercentCellRenderer,
         type: 'numericColumn',
       },
@@ -242,7 +258,7 @@ export function CatalogoGrid() {
       </div>
 
       <div
-        className="ag-theme-quartz ibeize-grid"
+        className="ag-theme-quartz ibeize-grid ibeize-catalog-grid"
         style={{ height: 'calc(100vh - 240px)', minHeight: 500 }}
       >
         <AgGridReact<Variacao>

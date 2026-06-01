@@ -43,3 +43,14 @@ class VariacaoTestCase(TestCase):
         )
         self.assertIsNone(v.margem)
 
+    def test_margem_promocional(self):
+        v = Variacao.objects.create(
+            produto=self.produto,
+            sku_nuvemshop="SKU-PROMO",
+            custo=Decimal("10.00"),
+            preco_loja=Decimal("20.00"),
+            preco_site=Decimal("25.00"),
+            preco_promocional=Decimal("18.00"),
+        )
+        self.assertEqual(v.margem_promocional, Decimal("0.8"))
+        self.assertEqual(v.margem_promocional_percentual, Decimal("80.0"))

@@ -24,6 +24,7 @@ class VariacaoAPITestCase(TestCase):
             "custo": "10.00",
             "preco_loja": "20.00",
             "preco_site": "25.00",
+            "preco_promocional": "18.00",
         }
         response = self.client.post("/catalog/variacoes/", json=payload)
         self.assertEqual(response.status_code, 201)
@@ -41,6 +42,11 @@ class VariacaoAPITestCase(TestCase):
         )
         # margem = (25 - 10) / 10 * 100 = 150%
         self.assertEqual(Decimal(data["margem_percentual"]), Decimal("150.00"))
+        self.assertEqual(data["preco_promocional"], "18.00")
+        self.assertEqual(
+            Decimal(data["margem_promocional_percentual"]),
+            Decimal("80.00"),
+        )
 
     def test_margem_null_sem_preco_site(self):
         v = Variacao.objects.create(
@@ -57,11 +63,12 @@ class VariacaoAPITestCase(TestCase):
         )
         response = self.client.patch(
             f"/catalog/variacoes/{v.id}",
-            json={"preco_site": "30.00"},
+            json={"preco_site": "30.00", "preco_promocional": "22.00"},
         )
         self.assertEqual(response.status_code, 200)
         v.refresh_from_db()
         self.assertEqual(v.preco_site, Decimal("30.00"))
+        self.assertEqual(v.preco_promocional, Decimal("22.00"))
 
     def test_archive_variacao(self):
         v = Variacao.objects.create(

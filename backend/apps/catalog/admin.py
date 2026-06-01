@@ -33,7 +33,7 @@ class VariacaoInline(admin.TabularInline):
     extra = 1
     fields = (
         "sku_nuvemshop", "descricao", "custo",
-        "preco_loja", "preco_site",
+        "preco_loja", "preco_site", "preco_promocional",
         "status_nuvemshop", "status_integracao", "ativo",
     )
     show_change_link = True
@@ -53,6 +53,7 @@ class VariacaoAdmin(admin.ModelAdmin):
     list_display = (
         "sku_nuvemshop", "produto", "descricao",
         "custo", "preco_site", "margem_percentual_display",
+        "preco_promocional", "margem_promocional_percentual_display",
         "status_nuvemshop", "ativo",
     )
     list_filter = ("ativo", "status_nuvemshop", "status_integracao", "produto__marca")
@@ -68,3 +69,9 @@ class VariacaoAdmin(admin.ModelAdmin):
         if obj.margem_percentual is None:
             return "—"
         return f"{obj.margem_percentual:.1f}%"
+
+    @admin.display(description="margem promoção %")
+    def margem_promocional_percentual_display(self, obj):
+        if obj.margem_promocional_percentual is None:
+            return "—"
+        return f"{obj.margem_promocional_percentual:.1f}%"

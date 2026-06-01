@@ -60,6 +60,24 @@ body {
   border-bottom: 1px solid var(--color-gray-100);
 }
 
+.ibeize-catalog-grid .ag-row-even .ag-cell {
+  background-color: #ffffff;
+}
+
+.ibeize-catalog-grid .ag-row-odd .ag-cell {
+  background-color: #fff4ec;
+}
+
+.ibeize-catalog-grid .ag-row-hover .ag-cell {
+  background-color: #ffeada !important;
+}
+
+.ibeize-catalog-grid .promo-price-cell span,
+.ibeize-catalog-grid .promo-margin-cell span {
+  color: #cf5608;
+  font-weight: 700;
+}
+
 /* Form inputs — used in produto editor */
 @layer components {
   .form-input {

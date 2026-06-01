@@ -4,10 +4,14 @@ import { useQuery } from '@tanstack/react-query'
 
 import { fetchCategoriasFinanceiras } from '../api/categoriasFinanceiras'
 import { fetchFinanceDashboard } from '../api/financeDashboard'
-import { CategoryPieChart } from '../components/finance-dashboard/CategoryPieChart'
+import {
+  CategoryFiltersPanel,
+  CategoryPieChart,
+} from '../components/finance-dashboard/CategoryPieChart'
 import { DashboardFilters } from '../components/finance-dashboard/DashboardFilters'
 import { KpiCards } from '../components/finance-dashboard/KpiCards'
 import { PaymentStatisticsPanel } from '../components/finance-dashboard/PaymentStatisticsPanel'
+import { StoreOverviewPanel } from '../components/finance-dashboard/StoreOverviewPanel'
 import { TimelineChart } from '../components/finance-dashboard/TimelineChart'
 import type { TipoLancamento } from '../types/finance'
 
@@ -45,6 +49,7 @@ export function FinancePage() {
     setTipoCategoria('')
     setIncluirPendentes(false)
   }
+  const visibleTimelineTypes = tipoCategoria ? [tipoCategoria] : undefined
 
   return (
     <div className="max-w-[1600px] mx-auto px-8 py-6">
@@ -112,9 +117,21 @@ export function FinancePage() {
           <>
             <KpiCards kpis={dashboardQuery.data.kpis} />
 
-            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.75fr)] gap-5">
-              <TimelineChart data={dashboardQuery.data.serie_mensal} />
-              <CategoryPieChart
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 items-stretch">
+              <div className="space-y-5 min-w-0">
+                <TimelineChart
+                  data={dashboardQuery.data.serie_mensal}
+                  visibleTypes={visibleTimelineTypes}
+                />
+
+                <CategoryPieChart
+                  receitas={dashboardQuery.data.receitas_por_categoria}
+                  despesas={dashboardQuery.data.despesas_por_categoria}
+                  custos={dashboardQuery.data.custos_por_categoria}
+                />
+              </div>
+
+              <CategoryFiltersPanel
                 receitas={dashboardQuery.data.receitas_por_categoria}
                 despesas={dashboardQuery.data.despesas_por_categoria}
                 custos={dashboardQuery.data.custos_por_categoria}
@@ -125,6 +142,8 @@ export function FinancePage() {
                 onTipoChange={setTipoCategoria}
               />
             </div>
+
+            <StoreOverviewPanel />
 
             <PaymentStatisticsPanel
               formaPagamento={

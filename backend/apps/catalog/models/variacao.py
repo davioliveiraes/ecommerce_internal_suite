@@ -63,6 +63,13 @@ class Variacao(TimestampedModel, SoftDeleteModel):
         blank=True,
         verbose_name="preço site",
     )
+    preco_promocional = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="preço promocional",
+    )
     status_nuvemshop = models.CharField(
         max_length=10,
         choices=StatusNuvemshop.choices,
@@ -96,3 +103,15 @@ class Variacao(TimestampedModel, SoftDeleteModel):
         if self.margem is None:
             return None
         return self.margem * 100
+
+    @property
+    def margem_promocional(self) -> Decimal | None:
+        if self.preco_promocional is None or self.custo == 0:
+            return None
+        return (self.preco_promocional - self.custo) / self.custo
+
+    @property
+    def margem_promocional_percentual(self) -> Decimal | None:
+        if self.margem_promocional is None:
+            return None
+        return self.margem_promocional * 100

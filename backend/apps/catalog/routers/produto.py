@@ -150,6 +150,7 @@ def update_produto_com_variacoes(
                 "custo": v_payload.custo,
                 "preco_loja": v_payload.preco_loja,
                 "preco_site": v_payload.preco_site,
+                "preco_promocional": v_payload.preco_promocional,
                 "status_nuvemshop": v_payload.status_nuvemshop,
                 "status_integracao": v_payload.status_integracao,
                 "ativo": v_payload.ativo,

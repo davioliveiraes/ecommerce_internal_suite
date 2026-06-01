@@ -13,6 +13,7 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
   const {
     register,
     control,
+    setValue,
     formState: { errors },
   } = useFormContext<ProdutoEditorForm>()
 
@@ -20,6 +21,10 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
   const precoSite = useWatch({
     control,
     name: `variacoes.${index}.preco_site`,
+  })
+  const precoPromocional = useWatch({
+    control,
+    name: `variacoes.${index}.preco_promocional`,
   })
   const sku = useWatch({ control, name: `variacoes.${index}.sku_nuvemshop` })
   const descricao = useWatch({
@@ -33,6 +38,21 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
     if (!c || c === 0 || !precoSite) return null
     return ((p - c) / c) * 100
   })()
+
+  const margemPromocional = (() => {
+    const c = parseFloat(custo || '0')
+    const p = parseFloat(precoPromocional || '0')
+    if (!c || c === 0 || !precoPromocional) return null
+    return ((p - c) / c) * 100
+  })()
+
+  const copiarPrecoSiteParaPromocao = () => {
+    setValue(`variacoes.${index}.preco_promocional`, precoSite || null, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+  }
 
   const varErrors = errors.variacoes?.[index]
 
@@ -123,12 +143,47 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
           />
         </Field>
 
+        <Field label="Preço Promocional">
+          <div className="flex gap-2">
+            <input
+              type="number"
+              step="0.01"
+              {...register(`variacoes.${index}.preco_promocional`)}
+              className="form-input font-mono min-w-0"
+              placeholder="—"
+            />
+            <button
+              type="button"
+              onClick={copiarPrecoSiteParaPromocao}
+              disabled={!precoSite}
+              className="inline-flex items-center justify-center px-2 border border-gray-200 bg-white text-gray-600 hover:text-orange hover:border-orange transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Copiar preço site"
+              aria-label="Copiar preço site para preço promocional"
+            >
+              <IconCopy />
+            </button>
+          </div>
+          {varErrors?.preco_promocional && (
+            <FieldError>{varErrors.preco_promocional.message}</FieldError>
+          )}
+        </Field>
+
         <Field label="Margem %">
           <div className="form-input bg-gray-50 cursor-not-allowed text-gray-600 flex items-center font-mono">
             {margem === null ? (
               <span className="text-gray-400">—</span>
             ) : (
               <span>{formatPercent(margem)}</span>
+            )}
+          </div>
+        </Field>
+
+        <Field label="Margem Promoção">
+          <div className="form-input bg-gray-50 cursor-not-allowed text-gray-600 flex items-center font-mono">
+            {margemPromocional === null ? (
+              <span className="text-gray-400">—</span>
+            ) : (
+              <span>{formatPercent(margemPromocional)}</span>
             )}
           </div>
         </Field>
@@ -207,6 +262,24 @@ function IconTrash() {
       <path d="M3 6h18" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
       <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  )
+}
+
+function IconCopy() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
   )
 }

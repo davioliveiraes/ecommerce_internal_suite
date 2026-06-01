@@ -14,6 +14,7 @@ class VariacaoIn(Schema):
     custo: Decimal
     preco_loja: Decimal
     preco_site: Optional[Decimal] = None
+    preco_promocional: Optional[Decimal] = None
     status_nuvemshop: str = "ATIVO"
     status_integracao: str = "ATIVO"
 
@@ -33,6 +34,8 @@ class VariacaoOut(Schema):
     preco_loja: Decimal
     preco_site: Optional[Decimal] = None
     margem_percentual: Optional[Decimal] = None
+    preco_promocional: Optional[Decimal] = None
+    margem_promocional_percentual: Optional[Decimal] = None
     status_nuvemshop: str
     status_integracao: str
     ativo: bool
@@ -62,6 +65,13 @@ class VariacaoOut(Schema):
             return None
         return m.quantize(Decimal("0.01"))
 
+    @staticmethod
+    def resolve_margem_promocional_percentual(obj) -> Optional[Decimal]:
+        m = obj.margem_promocional_percentual
+        if m is None:
+            return None
+        return m.quantize(Decimal("0.01"))
+
 
 class VariacaoPatch(Schema):
     sku_nuvemshop: Optional[str] = None
@@ -71,6 +81,7 @@ class VariacaoPatch(Schema):
     custo: Optional[Decimal] = None
     preco_loja: Optional[Decimal] = None
     preco_site: Optional[Decimal] = None
+    preco_promocional: Optional[Decimal] = None
     status_nuvemshop: Optional[str] = None
     status_integracao: Optional[str] = None
     ativo: Optional[bool] = None
