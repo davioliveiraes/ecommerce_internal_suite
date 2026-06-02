@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 
-from django.db.models import Sum
+from django.db.models import Max, Min, Sum
 from ninja import Router, Schema
 
 from finance.models import LancamentoFinanceiro
@@ -32,6 +32,17 @@ class FatiaCategoria(Schema):
     valor: Decimal
 
 
+class PeriodoCategoria(Schema):
+    categoria_id: Optional[int]
+    data_inicio: date
+    data_fim: date
+
+
+class PeriodoGeral(Schema):
+    data_inicio: date
+    data_fim: date
+
+
 class MetricaReceitaVendas(Schema):
     chave: str
     nome: str
@@ -45,6 +56,8 @@ class DashboardResponse(Schema):
     receitas_por_categoria: List[FatiaCategoria]
     despesas_por_categoria: List[FatiaCategoria]
     custos_por_categoria: List[FatiaCategoria]
+    periodo_geral: Optional[PeriodoGeral]
+    periodos_por_categoria: List[PeriodoCategoria]
     receita_vendas_por_forma_pagamento: List[MetricaReceitaVendas]
     receita_vendas_por_meio_pagamento: List[MetricaReceitaVendas]
     receita_vendas_por_parcelas: List[MetricaReceitaVendas]
@@ -83,9 +96,24 @@ def dashboard(
     - `?incluir_pendentes=true` soma PENDENTES também (visão accrual).
     - Filtros opcionais de data: ?data_inicio=YYYY-MM-DD&data_fim=YYYY-MM-DD.
     """
-    qs = LancamentoFinanceiro.objects.filter(ativo=True).select_related("categoria")
+    base_qs = LancamentoFinanceiro.objects.filter(ativo=True).select_related("categoria")
+    periodo_geral_agregado = base_qs.aggregate(
+        data_inicio=Min("data_lancamento"),
+        data_fim=Max("data_lancamento"),
+    )
+    periodo_geral = None
+    if periodo_geral_agregado["data_inicio"] and periodo_geral_agregado["data_fim"]:
+        periodo_geral = PeriodoGeral(
+            data_inicio=periodo_geral_agregado["data_inicio"],
+            data_fim=periodo_geral_agregado["data_fim"],
+        )
+
+    qs = base_qs
     if not incluir_pendentes:
         qs = qs.filter(status="PAGO")
+
+    periodo_qs = qs
+
     if data_inicio is not None:
         qs = qs.filter(data_lancamento__gte=data_inicio)
     if data_fim is not None:
@@ -145,6 +173,21 @@ def dashboard(
 
     receitas = qs.filter(tipo="RECEITA")
 
+    periodos_por_categoria = []
+    for item in (
+        periodo_qs.values("categoria_id")
+        .annotate(data_inicio=Min("data_lancamento"), data_fim=Max("data_lancamento"))
+        .order_by("categoria_id")
+    ):
+        if item["data_inicio"] and item["data_fim"]:
+            periodos_por_categoria.append(
+                PeriodoCategoria(
+                    categoria_id=item["categoria_id"],
+                    data_inicio=item["data_inicio"],
+                    data_fim=item["data_fim"],
+                )
+            )
+
     def agregar_receita_vendas(
         campo: str,
         labels: Optional[dict[str, str]] = None,
@@ -185,6 +228,8 @@ def dashboard(
         receitas_por_categoria=agregar_por_categoria("RECEITA"),
         despesas_por_categoria=agregar_por_categoria("DESPESA"),
         custos_por_categoria=agregar_por_categoria("CUSTO"),
+        periodo_geral=periodo_geral,
+        periodos_por_categoria=periodos_por_categoria,
         receita_vendas_por_forma_pagamento=agregar_receita_vendas(
             "forma_pagamento",
             FORMA_PAGAMENTO_LABELS,

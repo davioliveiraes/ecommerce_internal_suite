@@ -1,6 +1,7 @@
 import type {
   CategoriaFinanceira,
   FinanceFatiaCategoria,
+  FinancePeriodoCategoria,
   TipoLancamento,
 } from '../../types/finance'
 import { formatCurrency } from '../../utils/format'
@@ -13,8 +14,12 @@ interface CategoryPieChartProps {
 
 interface CategoryFiltersPanelProps extends CategoryPieChartProps {
   categorias: CategoriaFinanceira[]
+  periodosPorCategoria: FinancePeriodoCategoria[]
   selectedCategoriaId: number | null
-  onCategoriaChange: (categoriaId: number | null) => void
+  onCategoriaChange: (
+    categoriaId: number | null,
+    periodo?: FinancePeriodoCategoria,
+  ) => void
   selectedTipo: TipoLancamento | ''
   onTipoChange: (tipo: TipoLancamento | '') => void
 }
@@ -93,6 +98,7 @@ export function CategoryFiltersPanel({
   despesas,
   custos,
   categorias,
+  periodosPorCategoria,
   selectedCategoriaId,
   onCategoriaChange,
   selectedTipo,
@@ -110,7 +116,10 @@ export function CategoryFiltersPanel({
     : null
 
   const handleCategoriaChange = (categoria: CategoriaFinanceira | null) => {
-    onCategoriaChange(categoria?.id ?? null)
+    const periodo = periodosPorCategoria.find(
+      (item) => item.categoria_id === (categoria?.id ?? null),
+    )
+    onCategoriaChange(categoria?.id ?? null, periodo)
     const tipo = categoria ? CATEGORY_KIND_BY_SLUG[categoria.slug] : null
     if (tipo) {
       onTipoChange(tipo)

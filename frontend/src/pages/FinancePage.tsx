@@ -16,7 +16,7 @@ import { StoreOverviewPanel } from '../components/finance-dashboard/StoreOvervie
 import { TimelineChart } from '../components/finance-dashboard/TimelineChart'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useDownloadPdf } from '../hooks/useDownloadPdf'
-import type { TipoLancamento } from '../types/finance'
+import type { FinancePeriodoCategoria, TipoLancamento } from '../types/finance'
 import { COLUNAS_FINANCE } from '../types/reports'
 
 export function FinancePage() {
@@ -51,13 +51,32 @@ export function FinancePage() {
   })
 
   const clearFilters = () => {
-    setDataInicio('')
-    setDataFim('')
+    const periodoGeral = dashboardQuery.data?.periodo_geral
+    setDataInicio(periodoGeral?.data_inicio || '')
+    setDataFim(periodoGeral?.data_fim || '')
     setCategoriaId(null)
     setTipoCategoria('')
-    setIncluirPendentes(false)
+    setIncluirPendentes(true)
   }
   const visibleTimelineTypes = tipoCategoria ? [tipoCategoria] : undefined
+
+  const handleCategoriaChange = (
+    nextCategoriaId: number | null,
+    periodo?: FinancePeriodoCategoria,
+  ) => {
+    setCategoriaId(nextCategoriaId)
+    if (!periodo || nextCategoriaId === null) return
+
+    const inicioAtual = dataInicio || periodo.data_inicio
+    const fimAtual = dataFim || periodo.data_fim
+    const categoriaForaDoPeriodo =
+      periodo.data_inicio < inicioAtual || periodo.data_fim > fimAtual
+
+    if (categoriaForaDoPeriodo) {
+      setDataInicio(periodo.data_inicio)
+      setDataFim(periodo.data_fim)
+    }
+  }
 
   const handleExport = async (colunas: string[]) => {
     await download(
@@ -169,8 +188,11 @@ export function FinancePage() {
                 despesas={dashboardQuery.data.despesas_por_categoria}
                 custos={dashboardQuery.data.custos_por_categoria}
                 categorias={categoriasQuery.data || []}
+                periodosPorCategoria={
+                  dashboardQuery.data.periodos_por_categoria || []
+                }
                 selectedCategoriaId={categoriaId}
-                onCategoriaChange={setCategoriaId}
+                onCategoriaChange={handleCategoriaChange}
                 selectedTipo={tipoCategoria}
                 onTipoChange={setTipoCategoria}
               />

@@ -88,6 +88,17 @@ export interface FinanceFatiaCategoria {
   valor: string
 }
 
+export interface FinancePeriodoCategoria {
+  categoria_id: number | null
+  data_inicio: string
+  data_fim: string
+}
+
+export interface FinancePeriodoGeral {
+  data_inicio: string
+  data_fim: string
+}
+
 export interface FinanceMetricaReceitaVendas {
   chave: string
   nome: string
@@ -101,6 +112,8 @@ export interface FinanceDashboard {
   receitas_por_categoria: FinanceFatiaCategoria[]
   despesas_por_categoria: FinanceFatiaCategoria[]
   custos_por_categoria: FinanceFatiaCategoria[]
+  periodo_geral: FinancePeriodoGeral | null
+  periodos_por_categoria: FinancePeriodoCategoria[]
   receita_vendas_por_forma_pagamento: FinanceMetricaReceitaVendas[]
   receita_vendas_por_meio_pagamento: FinanceMetricaReceitaVendas[]
   receita_vendas_por_parcelas: FinanceMetricaReceitaVendas[]
