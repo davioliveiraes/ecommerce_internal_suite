@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { formatCurrency } from '../../utils/format'
-import type { KpiFormato } from '../../types/analytics'
+
+export type SparkFormato = 'inteiro' | 'moeda'
 
 interface Props {
   serie: Array<number | string>
   labels: string[]
-  formato: KpiFormato
+  formato: SparkFormato
   color?: string
   height?: number
 }

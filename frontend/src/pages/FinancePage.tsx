@@ -4,9 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 
 import { fetchCategoriasFinanceiras } from '../api/categoriasFinanceiras'
 import { fetchFinanceDashboard } from '../api/financeDashboard'
-import { AnalyticsOverview } from '../components/finance-dashboard/AnalyticsOverview'
-import { AnalyticsProducts } from '../components/finance-dashboard/AnalyticsProducts'
-import { ExportPdfModal } from '../components/reports/ExportPdfModal'
 import {
   CategoryFiltersPanel,
   CategoryPieChart,
@@ -14,37 +11,23 @@ import {
 import { DashboardFilters } from '../components/finance-dashboard/DashboardFilters'
 import { KpiCards } from '../components/finance-dashboard/KpiCards'
 import { PaymentStatisticsPanel } from '../components/finance-dashboard/PaymentStatisticsPanel'
-import { StoreOverviewPanel } from '../components/finance-dashboard/StoreOverviewPanel'
 import { TimelineChart } from '../components/finance-dashboard/TimelineChart'
+import { VisaoGeralTab } from '../components/finance-dashboard/VisaoGeralTab'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import { useDownloadPdf } from '../hooks/useDownloadPdf'
+import { OPERATION_START_DATE, getTodayInputValue } from '../utils/dateRange'
 import type { FinancePeriodoCategoria, TipoLancamento } from '../types/finance'
-import { COLUNAS_FINANCE } from '../types/reports'
 
-type TabKey = 'financeiro' | 'visao_geral' | 'produtos'
+type TabKey = 'visao_geral' | 'financeiro'
 
-const TABS: Array<{ key: TabKey; label: string; description: string }> = [
-  {
-    key: 'financeiro',
-    label: 'Financeiro',
-    description: 'Receita, custo, despesa e lucro consolidados.',
-  },
-  {
-    key: 'visao_geral',
-    label: 'Visão geral',
-    description: 'Visitas, comportamento e conversões da loja.',
-  },
-  {
-    key: 'produtos',
-    label: 'Produtos',
-    description: 'Rankings de vendas, visualizações, estoque e margem.',
-  },
+const TABS: Array<{ key: TabKey; label: string }> = [
+  { key: 'visao_geral', label: 'Visão geral' },
+  { key: 'financeiro', label: 'Financeiro' },
 ]
 
 export function FinancePage() {
   useDocumentTitle('Finance — {{COMPANY_NAME}}')
 
-  const [activeTab, setActiveTab] = useState<TabKey>('financeiro')
+  const [activeTab, setActiveTab] = useState<TabKey>('visao_geral')
 
   return (
     <div className="max-w-[1600px] mx-auto px-8 py-6">
@@ -60,9 +43,7 @@ export function FinancePage() {
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'text-black'
-                    : 'text-gray-500 hover:text-black'
+                  isActive ? 'text-black' : 'text-gray-500 hover:text-black'
                 }`}
               >
                 {tab.label}
@@ -75,9 +56,8 @@ export function FinancePage() {
         </div>
       </nav>
 
+      {activeTab === 'visao_geral' && <VisaoGeralTab />}
       {activeTab === 'financeiro' && <FinanceiroTab />}
-      {activeTab === 'visao_geral' && <AnalyticsOverview />}
-      {activeTab === 'produtos' && <AnalyticsProducts />}
     </div>
   )
 }
@@ -91,8 +71,9 @@ function FinancePageHeader() {
           Dashboard — {`{{COMPANY_NAME}}`} Finance
         </h1>
         <p className="text-sm text-gray-600 mt-1 max-w-3xl">
-          Resultado consolidado dos lançamentos financeiros, com visão mensal,
-          estatísticas da loja e rankings de produtos.
+          Visão geral da loja (preenchida pelo analista) e resultado consolidado
+          dos lançamentos financeiros, com visão mensal, categorias e
+          estatísticas de pagamento.
         </p>
       </div>
 
@@ -104,32 +85,21 @@ function FinancePageHeader() {
           <IconHome />
           Inicio
         </Link>
-
-        <Link
-          to="/finance/lancamentos"
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-black bg-black text-white hover:bg-gray-900 hover:border-gray-900 transition-colors"
-        >
-          <IconList />
-          Lançamentos
-        </Link>
       </div>
     </div>
   )
 }
 
 function FinanceiroTab() {
-  const [dataInicio, setDataInicio] = useState(getStartOfCurrentYear())
+  const [dataInicio, setDataInicio] = useState(OPERATION_START_DATE)
   const [dataFim, setDataFim] = useState(getTodayInputValue())
-  const [incluirPendentes, setIncluirPendentes] = useState(false)
   const [categoriaId, setCategoriaId] = useState<number | null>(null)
   const [tipoCategoria, setTipoCategoria] = useState<TipoLancamento | ''>('')
-  const [isExportOpen, setIsExportOpen] = useState(false)
-  const { download, isDownloading } = useDownloadPdf()
 
   const dashboardQuery = useQuery({
     queryKey: [
       'finance-dashboard',
-      { dataInicio, dataFim, incluirPendentes, categoriaId, tipoCategoria },
+      { dataInicio, dataFim, categoriaId, tipoCategoria },
     ],
     queryFn: () =>
       fetchFinanceDashboard({
@@ -137,7 +107,7 @@ function FinanceiroTab() {
         data_fim: dataFim,
         categoria_id: categoriaId,
         tipo: tipoCategoria,
-        incluir_pendentes: incluirPendentes,
+        incluir_pendentes: false,
       }),
   })
 
@@ -147,12 +117,10 @@ function FinanceiroTab() {
   })
 
   const clearFilters = () => {
-    const periodoGeral = dashboardQuery.data?.periodo_geral
-    setDataInicio(periodoGeral?.data_inicio || '')
-    setDataFim(periodoGeral?.data_fim || '')
+    setDataInicio(OPERATION_START_DATE)
+    setDataFim(getTodayInputValue())
     setCategoriaId(null)
     setTipoCategoria('')
-    setIncluirPendentes(true)
   }
   const visibleTimelineTypes = tipoCategoria ? [tipoCategoria] : undefined
 
@@ -174,44 +142,64 @@ function FinanceiroTab() {
     }
   }
 
-  const handleExport = async (colunas: string[]) => {
-    await download(
-      '/reports/finance/pdf',
-      {
-        colunas,
-        data_inicio: dataInicio || undefined,
-        data_fim: dataFim || undefined,
-        tipo: tipoCategoria || undefined,
-        categoria_id: categoriaId ?? undefined,
-        status: incluirPendentes ? undefined : 'PAGO',
-      },
-      `ecommerce-finance-dashboard-${new Date().toISOString().slice(0, 10)}.pdf`,
+  const handleExportarPdf = () => {
+    // TODO: implementar nova lógica de exportação do relatório financeiro.
+    window.alert(
+      'Exportação do relatório financeiro será implementada em breve.',
     )
-    setIsExportOpen(false)
   }
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-3">
-        <DashboardFilters
-          dataInicio={dataInicio}
-          dataFim={dataFim}
-          incluirPendentes={incluirPendentes}
-          onDataInicioChange={setDataInicio}
-          onDataFimChange={setDataFim}
-          onIncluirPendentesChange={setIncluirPendentes}
-          onClear={clearFilters}
-        />
+      <aside className="flex flex-wrap items-center gap-x-3 gap-y-1 border border-black bg-gray-50 px-4 py-3">
+        <span className="inline-flex items-center border border-black bg-black px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-white">
+          Controle interno
+        </span>
+        <span className="text-sm text-gray-700">
+          Resultados do setor de Ecommerce da Empresa.
+        </span>
+      </aside>
 
-        <button
-          type="button"
-          onClick={() => setIsExportOpen(true)}
-          className="inline-flex shrink-0 items-center gap-1.5 px-4 py-2 text-sm border border-black text-black hover:bg-gray-50 transition-colors"
-        >
-          <IconDownload />
-          Exportar PDF
-        </button>
-      </div>
+      <header className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <div className="kicker">Dashboard</div>
+          <h2 className="font-display text-2xl font-semibold text-black">
+            Financeiro
+          </h2>
+          <p className="text-sm text-gray-600">
+            Informações de resultados do Ecommerce da Empresa.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-end justify-between gap-3 border border-gray-200 bg-gray-50 px-4 py-3">
+          <DashboardFilters
+            dataInicio={dataInicio}
+            dataFim={dataFim}
+            onDataInicioChange={setDataInicio}
+            onDataFimChange={setDataFim}
+            onClear={clearFilters}
+          />
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportarPdf}
+              className="inline-flex items-center gap-1.5 border border-black bg-white px-3 py-1.5 text-sm text-black hover:bg-gray-100 transition-colors"
+            >
+              <IconDownload />
+              Exportar Relatório PDF
+            </button>
+
+            <Link
+              to="/finance/lancamentos"
+              className="inline-flex items-center gap-1.5 border border-black bg-black px-3 py-1.5 text-sm text-white hover:bg-gray-900 transition-colors"
+            >
+              <IconList />
+              Lançamentos
+            </Link>
+          </div>
+        </div>
+      </header>
 
       {dashboardQuery.isError && (
         <div className="border border-gray-300 bg-gray-50 px-6 py-5">
@@ -264,8 +252,6 @@ function FinanceiroTab() {
             />
           </div>
 
-          <StoreOverviewPanel />
-
           <PaymentStatisticsPanel
             formaPagamento={
               dashboardQuery.data.receita_vendas_por_forma_pagamento
@@ -273,32 +259,11 @@ function FinanceiroTab() {
             meioPagamento={
               dashboardQuery.data.receita_vendas_por_meio_pagamento
             }
-            parcelas={dashboardQuery.data.receita_vendas_por_parcelas}
           />
         </>
       )}
-
-      <ExportPdfModal
-        isOpen={isExportOpen}
-        onClose={() => setIsExportOpen(false)}
-        titulo="Relatório — {{COMPANY_NAME}} Finance"
-        colunasDisponiveis={COLUNAS_FINANCE}
-        onConfirm={handleExport}
-        isDownloading={isDownloading}
-      />
     </div>
   )
-}
-
-function getTodayInputValue() {
-  const date = new Date()
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
-  return date.toISOString().slice(0, 10)
-}
-
-function getStartOfCurrentYear() {
-  const date = new Date()
-  return `${date.getFullYear()}-01-01`
 }
 
 function IconList() {

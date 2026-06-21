@@ -8,6 +8,11 @@ from .lancamento_financeiro import (
     LancamentoFinanceiroOut,
     LancamentoFinanceiroPatch,
 )
+from .visao_geral import (
+    VisaoGeralPeriodoIn,
+    VisaoGeralPeriodoOut,
+    VisaoGeralPeriodoPatch,
+)
 
 __all__ = [
     "CategoriaFinanceiraIn",
@@ -16,4 +21,7 @@ __all__ = [
     "LancamentoFinanceiroIn",
     "LancamentoFinanceiroOut",
     "LancamentoFinanceiroPatch",
+    "VisaoGeralPeriodoIn",
+    "VisaoGeralPeriodoOut",
+    "VisaoGeralPeriodoPatch",
 ]

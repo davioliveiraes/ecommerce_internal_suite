@@ -13,59 +13,37 @@ interface BarHover {
 interface Props {
   formaPagamento: FinanceMetricaReceitaVendas[]
   meioPagamento: FinanceMetricaReceitaVendas[]
-  parcelas: FinanceMetricaReceitaVendas[]
 }
 
 const MAIN_PAYMENT_METHODS = [
   { chave: 'PIX', nome: 'Pix' },
   { chave: 'CARTAO_CREDITO', nome: 'Cartão de crédito' },
+  { chave: 'BOLETO', nome: 'Boleto' },
 ]
 
 export function PaymentStatisticsPanel({
   formaPagamento,
   meioPagamento,
-  parcelas,
 }: Props) {
   const formas = normalizePaymentMethods(formaPagamento)
-  const hasData = formas.some((item) => parseFloat(item.receita) > 0 || item.vendas > 0)
-  const totalReceita = sumReceita(formaPagamento)
-  const totalVendas = sumVendas(formaPagamento)
+  const hasData = formas.some(
+    (item) => parseFloat(item.receita) > 0 || item.vendas > 0,
+  )
+  const totalReceita = sumReceita(formas)
+  const totalVendas = sumVendas(formas)
+  const conta = resolveContaPagamentos(meioPagamento, totalReceita)
   const summaryCards = [
     {
       color: '#0a0a0a',
       title: 'Receita por forma de pagamento',
-      value: formatCurrency(sumReceita(formaPagamento)),
+      value: formatCurrency(totalReceita),
       details: buildDetails(formas, 'receita'),
     },
     {
       color: '#404040',
       title: 'Vendas por forma de pagamento',
-      value: sumVendas(formaPagamento).toLocaleString('pt-BR'),
+      value: totalVendas.toLocaleString('pt-BR'),
       details: buildDetails(formas, 'vendas'),
-    },
-    {
-      color: '#525252',
-      title: 'Receita por meio de pagamento',
-      value: formatCurrency(sumReceita(meioPagamento)),
-      details: buildDetails(meioPagamento, 'receita'),
-    },
-    {
-      color: '#737373',
-      title: 'Vendas por meio de pagamento',
-      value: sumVendas(meioPagamento).toLocaleString('pt-BR'),
-      details: buildDetails(meioPagamento, 'vendas'),
-    },
-    {
-      color: '#262626',
-      title: 'Receita por quantidade de parcelas',
-      value: formatCurrency(sumReceita(parcelas)),
-      details: buildDetails(parcelas, 'receita'),
-    },
-    {
-      color: '#a3a3a3',
-      title: 'Vendas por quantidade de parcelas',
-      value: sumVendas(parcelas).toLocaleString('pt-BR'),
-      details: buildDetails(parcelas, 'vendas'),
     },
   ]
 
@@ -84,6 +62,20 @@ export function PaymentStatisticsPanel({
         </div>
       </div>
 
+      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1 border border-black bg-gray-50 px-4 py-3">
+        <span className="inline-flex items-center border border-black bg-black px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-white">
+          Conta de pagamentos NuvemShop
+        </span>
+        <span className="text-sm font-medium text-black">{conta.nome}</span>
+        <span className="font-mono text-xs text-gray-600">
+          {formatCurrency(conta.receita)} recebidos no período
+        </span>
+        <span className="ml-auto text-xs text-gray-600">
+          Todo valor entra pela conta NuvemShop. A quebra abaixo é por forma de
+          pagamento escolhida pelo cliente.
+        </span>
+      </div>
+
       {!hasData ? (
         <div className="h-[320px] border border-dashed border-gray-200 bg-gray-50 flex items-center justify-center text-sm text-gray-600">
           Sem estatísticas de pagamento no período selecionado.
@@ -92,7 +84,7 @@ export function PaymentStatisticsPanel({
         <>
           <div className="mb-4">
             <h3 className="font-display text-lg font-semibold text-black">
-              Seus pagamentos: visão geral
+              Vendas por forma de pagamento
             </h3>
             <p className="text-xs text-gray-600 mt-1">
               Comparativo consolidado entre receita e volume de vendas.
@@ -319,9 +311,22 @@ function buildDetails(
     .join(' · ')
 }
 
+function resolveContaPagamentos(
+  meio: FinanceMetricaReceitaVendas[],
+  totalReceita: number,
+) {
+  const dominante = [...meio].sort(
+    (a, b) => parseFloat(b.receita) - parseFloat(a.receita),
+  )[0]
+  return {
+    nome: dominante?.nome || 'NuvemPago',
+    receita: dominante ? parseFloat(dominante.receita) : totalReceita,
+  }
+}
+
 function normalizePaymentMethods(data: FinanceMetricaReceitaVendas[]) {
   const mapped = new Map(data.map((item) => [item.chave, item]))
-  const preferred = MAIN_PAYMENT_METHODS.map((method) => {
+  return MAIN_PAYMENT_METHODS.map((method) => {
     return (
       mapped.get(method.chave) || {
         chave: method.chave,
@@ -331,10 +336,4 @@ function normalizePaymentMethods(data: FinanceMetricaReceitaVendas[]) {
       }
     )
   })
-
-  const extra = data.filter(
-    (item) => !MAIN_PAYMENT_METHODS.some((method) => method.chave === item.chave),
-  )
-
-  return [...preferred, ...extra]
 }

@@ -1,18 +1,27 @@
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMemo, useRef, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AgGridReact } from 'ag-grid-react'
 import {
   AllCommunityModule,
   ModuleRegistry,
+  type CellValueChangedEvent,
   type ColDef,
+  type GridApi,
   type GridOptions,
+  type GridReadyEvent,
+  type ValueSetterParams,
 } from 'ag-grid-community'
 
-import { fetchVariacoes } from '../../api/variacoes'
+import {
+  fetchVariacoes,
+  patchVariacao,
+  type VariacaoPrecosPatch,
+} from '../../api/variacoes'
 import { ExportPdfModal } from '../reports/ExportPdfModal'
 import { useDownloadPdf } from '../../hooks/useDownloadPdf'
 import type { Variacao } from '../../types/catalog'
 import { COLUNAS_CATALOGO } from '../../types/reports'
+import { MoneyCellEditor } from './MoneyCellEditor'
 import { MoneyCellRenderer } from './MoneyCellRenderer'
 import { PercentCellRenderer } from './PercentCellRenderer'
 import { StatusBadgeRenderer } from './StatusBadgeRenderer'
@@ -23,12 +32,29 @@ ModuleRegistry.registerModules([AllCommunityModule])
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
 
+function toNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const num = typeof value === 'number' ? value : parseFloat(String(value))
+  return isNaN(num) ? null : num
+}
+
+function formatDecimal(value: number | null): string | null {
+  return value === null ? null : value.toFixed(2)
+}
+
+function calcMargemPercentual(custo: number | null, preco: number | null): string | null {
+  if (custo === null || custo <= 0 || preco === null) return null
+  return (((preco - custo) / custo) * 100).toFixed(2)
+}
+
 export function CatalogoGrid() {
   const [searchText, setSearchText] = useState('')
   const [incluirInativos, setIncluirInativos] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [apenasPromocional, setApenasPromocional] = useState(false)
   const { download, isDownloading } = useDownloadPdf()
+  const gridApiRef = useRef<GridApi<Variacao> | null>(null)
+  const queryClient = useQueryClient()
 
   const {
     data: variacoes = [],
@@ -39,6 +65,52 @@ export function CatalogoGrid() {
     queryKey: ['variacoes', { inativos: incluirInativos }],
     queryFn: () => fetchVariacoes({ inativos: incluirInativos }),
   })
+
+  const patchMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: VariacaoPrecosPatch }) =>
+      patchVariacao(id, payload),
+    onSuccess: (updated) => {
+      gridApiRef.current?.applyTransaction({ update: [updated] })
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['variacoes'] })
+    },
+  })
+
+  const handleCellValueChanged = (event: CellValueChangedEvent<Variacao>) => {
+    const field = event.colDef.field
+    if (!field || !event.data) return
+    const data = event.data
+    let payload: VariacaoPrecosPatch | null = null
+    switch (field) {
+      case 'custo': {
+        const novo = toNumber(data.custo)
+        if (novo === null) return
+        payload = { custo: novo }
+        break
+      }
+      case 'preco_loja': {
+        const novo = toNumber(data.preco_loja)
+        if (novo === null) return
+        payload = { preco_loja: novo }
+        break
+      }
+      case 'preco_site': {
+        const novo = toNumber(data.preco_site)
+        payload = { preco_site: novo }
+        break
+      }
+      case 'preco_promocional': {
+        const novo = toNumber(data.preco_promocional)
+        payload = { preco_promocional: novo }
+        break
+      }
+      default:
+        return
+    }
+    if (!payload) return
+    patchMutation.mutate({ id: data.id, payload })
+  }
 
   const columnDefs = useMemo<ColDef<Variacao>[]>(
     () => [
@@ -84,29 +156,79 @@ export function CatalogoGrid() {
         headerName: 'Custo',
         minWidth: 110,
         cellRenderer: MoneyCellRenderer,
+        cellEditor: MoneyCellEditor,
+        editable: true,
+        cellClass: 'editable-cell',
         type: 'numericColumn',
+        valueSetter: (params: ValueSetterParams<Variacao>) => {
+          const novo = toNumber(params.newValue)
+          if (novo === null || novo < 0) return false
+          params.data.custo = formatDecimal(novo) ?? params.data.custo
+          params.data.margem_percentual = calcMargemPercentual(
+            novo,
+            toNumber(params.data.preco_site),
+          )
+          params.data.margem_promocional_percentual = calcMargemPercentual(
+            novo,
+            toNumber(params.data.preco_promocional),
+          )
+          return true
+        },
       },
       {
         field: 'preco_loja',
         headerName: 'Preço Loja',
         minWidth: 110,
         cellRenderer: MoneyCellRenderer,
+        cellEditor: MoneyCellEditor,
+        editable: true,
+        cellClass: 'editable-cell',
         type: 'numericColumn',
+        valueSetter: (params: ValueSetterParams<Variacao>) => {
+          const novo = toNumber(params.newValue)
+          if (novo === null || novo < 0) return false
+          params.data.preco_loja = formatDecimal(novo) ?? params.data.preco_loja
+          return true
+        },
       },
       {
         field: 'preco_site',
         headerName: 'Preço Site',
         minWidth: 110,
         cellRenderer: MoneyCellRenderer,
+        cellEditor: MoneyCellEditor,
+        editable: true,
+        cellClass: 'editable-cell',
         type: 'numericColumn',
+        valueSetter: (params: ValueSetterParams<Variacao>) => {
+          const novo = toNumber(params.newValue)
+          if (novo !== null && novo < 0) return false
+          const custo = toNumber(params.data.custo)
+          params.data.preco_site = formatDecimal(novo)
+          params.data.margem_percentual = calcMargemPercentual(custo, novo)
+          return true
+        },
       },
       {
         field: 'preco_promocional',
         headerName: 'Preço Promocional',
         minWidth: 150,
-        cellClass: 'promo-price-cell',
+        cellClass: 'promo-price-cell editable-cell',
         cellRenderer: MoneyCellRenderer,
+        cellEditor: MoneyCellEditor,
+        editable: true,
         type: 'numericColumn',
+        valueSetter: (params: ValueSetterParams<Variacao>) => {
+          const novo = toNumber(params.newValue)
+          if (novo !== null && novo < 0) return false
+          const custo = toNumber(params.data.custo)
+          params.data.preco_promocional = formatDecimal(novo)
+          params.data.margem_promocional_percentual = calcMargemPercentual(
+            custo,
+            novo,
+          )
+          return true
+        },
       },
       {
         field: 'margem_percentual',
@@ -172,8 +294,9 @@ export function CatalogoGrid() {
       quickFilterText: searchText,
       enableCellTextSelection: true,
       ensureDomOrder: true,
-      suppressClickEdit: true,
+      suppressClickEdit: false,
       singleClickEdit: false,
+      stopEditingWhenCellsLoseFocus: true,
       localeText: {
         page: 'Página',
         to: 'até',
@@ -309,6 +432,10 @@ export function CatalogoGrid() {
           gridOptions={gridOptions}
           loading={isLoading}
           getRowId={(params) => String(params.data.id)}
+          onGridReady={(event: GridReadyEvent<Variacao>) => {
+            gridApiRef.current = event.api
+          }}
+          onCellValueChanged={handleCellValueChanged}
         />
       </div>
 

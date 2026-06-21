@@ -40,7 +40,7 @@ Cada app tem responsabilidade única e fronteira clara:
 | App | Responsabilidade |
 |---|---|
 | `catalog` | Marcas, categorias, subcategorias, produtos, variações. SKUs e EANs. |
-| `finance` | Categorias financeiras, lançamentos, dashboards consolidados, mock de analytics. |
+| `finance` | Categorias financeiras, lançamentos, dashboards consolidados. |
 | `importer` | Comando de importação por planilha (xlsx) — para popular catálogo a partir de Excel/Sheets. |
 | `reports` | Geração de PDFs com ReportLab. Não tem modelo próprio — só consome dados de outras apps. |
 
@@ -91,15 +91,9 @@ Variação tem campos calculados como properties (não no banco):
 - `margem_decimal` e `margem_percentual` (sobre `preco_site`).
 - `margem_promocional_decimal` e `margem_promocional_percentual` (sobre `preco_promocional`).
 
-### 2.5 Mock determinístico de analytics
+### 2.5 Seeds determinísticos
 
-`finance/services/analytics_service.py` simula estatísticas estilo Nuvemshop (visitas, conversões, rankings de produto) usando `random.Random(42)`. A semente fixa garante:
-
-- Números reprodutíveis em qualquer ambiente.
-- Coerência entre runs (top produto não muda entre reloads).
-- Plotagem visualmente convincente em screenshots.
-
-Os schemas em `finance/routers/analytics.py` definem o **contrato**. Para conectar à API real do Nuvemshop, basta reescrever o service mantendo o mesmo retorno — o frontend não muda.
+`catalog` e `finance` trazem comandos de seed (`seed_catalog`, `seed_finance`) que populam o banco com dados de demonstração usando `random.seed(42)`. A semente fixa garante números reprodutíveis em qualquer ambiente — útil para screenshots e para avaliar o painel preenchido sem precisar de uma loja real.
 
 ## 3. Frontend — React + Vite
 
@@ -119,19 +113,18 @@ Sem Redux/Zustand. Estado de servidor fica no TanStack Query; estado de UI fica 
 
 ### 3.2 Por que sem Recharts/Chart.js
 
-Os gráficos do dashboard (linha temporal, donut, barras horizontais, barras verticais, sparkline) são SVG cru, ~100-200 linhas cada. Vantagens:
+Os gráficos do dashboard (linha temporal, donut, barras horizontais, barras verticais) são SVG cru, ~100-200 linhas cada. Vantagens:
 
 - **Bundle menor**: economiza ~150KB gzip.
 - **Controle visual total**: paleta exata, tooltips customizados, animações específicas.
 - **Tooltips React**: nada de `<title>` SVG nativo (delay do browser + estilo limitado). Cada chart tem hover via `useState` + overlay absoluto.
 
-Os 5 componentes de gráfico:
+Os componentes de gráfico:
 
 - `TimelineChart.tsx` — linha SVG com flip automático de tooltip nos pontos do topo.
 - `CategoryPieChart.tsx` — donut + painel de filtros lateral.
-- `PaymentStatisticsPanel.tsx` — barras verticais agrupadas.
-- `StoreOverviewPanel.tsx` — barras verticais simples (revenue por mês).
-- `MiniSparkline.tsx` — mini linha + área para KPI cards.
+- `PaymentStatisticsPanel.tsx` — barras verticais agrupadas por forma de pagamento.
+- `MiniSparkline.tsx` — mini linha + área para os KPI cards da Visão Geral.
 
 ### 3.3 AG Grid no catálogo
 

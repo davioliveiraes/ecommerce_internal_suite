@@ -1,6 +1,10 @@
 from django.contrib import admin
 
-from finance.models import CategoriaFinanceira, LancamentoFinanceiro
+from finance.models import (
+    CategoriaFinanceira,
+    LancamentoFinanceiro,
+    VisaoGeralPeriodo,
+)
 
 
 @admin.register(CategoriaFinanceira)
@@ -21,3 +25,13 @@ class LancamentoFinanceiroAdmin(admin.ModelAdmin):
     search_fields = ("descricao", "observacoes")
     autocomplete_fields = ("categoria",)
     date_hierarchy = "data_lancamento"
+
+
+@admin.register(VisaoGeralPeriodo)
+class VisaoGeralPeriodoAdmin(admin.ModelAdmin):
+    list_display = (
+        "data_inicio", "data_fim", "visitas",
+        "pedidos_pagos", "receita", "ativo",
+    )
+    list_filter = ("ativo",)
+    date_hierarchy = "data_inicio"

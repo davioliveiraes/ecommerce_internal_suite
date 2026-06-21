@@ -26,6 +26,24 @@ export async function fetchVariacoesPorProduto(
   return response.data
 }
 
+export interface VariacaoPrecosPatch {
+  custo?: number
+  preco_loja?: number | null
+  preco_site?: number | null
+  preco_promocional?: number | null
+}
+
+export async function patchVariacao(
+  id: number,
+  payload: VariacaoPrecosPatch,
+): Promise<Variacao> {
+  const response = await apiClient.patch<Variacao>(
+    `/catalog/variacoes/${id}`,
+    payload,
+  )
+  return response.data
+}
+
 export async function archiveVariacao(id: number): Promise<Variacao> {
   const response = await apiClient.post<Variacao>(
     `/catalog/variacoes/${id}/archive`,

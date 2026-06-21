@@ -1,6 +1,6 @@
 # Ecommerce Internal Suite
 
-> Painel administrativo full-stack para lojistas Nuvemshop — catálogo, financeiro, dashboards e relatórios em PDF, com seed de demonstração pronto pra rodar em 3 comandos.
+> Painel administrativo full-stack para lojistas Nuvemshop + GestãoClick — catálogo, financeiro, dashboards e relatórios em PDF, com seed de demonstração pronto pra rodar em 3 comandos.
 
 ![status](https://img.shields.io/badge/status-portf%C3%B3lio-black?style=flat-square) ![stack](https://img.shields.io/badge/stack-Django%20%2B%20React-black?style=flat-square) 
 
@@ -10,7 +10,7 @@
 
 ## O que é
 
-Uma suíte de controle interno pensada para **lojistas Nuvemshop** que precisam de uma camada operacional além do painel padrão da plataforma: cadastro detalhado de produtos e variações com SKU/EAN, conciliação financeira manual, relatórios em PDF e dashboards mensais consolidados.
+Uma suíte de controle interno pensada para **lojistas que operam com Nuvemshop + GestãoClick** e precisam de uma camada operacional própria, acima do painel padrão das plataformas: cadastro detalhado de produtos e variações com SKU/EAN, edição de preços direto na tabela, conciliação financeira manual, relatórios em PDF e dashboards mensais consolidados.
 
 O repositório é um **template portfólio**: vem com seed determinístico (~30 produtos / ~80 variações de acessórios mobile/tech + 6 meses de lançamentos financeiros), paleta minimalista preto/branco e nomenclaturas neutras (`{{COMPANY_NAME}}`) prontas para serem personalizadas com sua marca.
 
@@ -43,16 +43,16 @@ O repositório é um **template portfólio**: vem com seed determinístico (~30 
 
 - Listagem em grid AG Grid com agrupamento por produto e variações expansíveis.
 - Busca full-text e filtros por status (Nuvemshop / Integração).
+- **Edição inline de preços** (custo, preço loja, preço site, preço promocional) direto na célula, estilo planilha: digita, aperta Enter e a margem é recalculada na hora.
 - Editor de produto + variações com SKU, EAN-13, custo, preço loja/site, preço promocional, margem calculada e status duplo.
 - Exportação PDF com seleção de colunas + filtro "apenas promocionais".
 
 ### Módulo 02 — Finance
 
-Dashboard em **3 abas**:
+Dashboard em **2 abas**:
 
-1. **Financeiro** — KPIs (receita, custo, despesa, lucro), linha temporal mensal, donut de categorias, estatísticas de pagamento (forma, meio, parcelas) e exportação PDF.
-2. **Visão geral** — Réplica do painel Nuvemshop nativo: visitas, vendas, receita e ticket médio com sparklines; funil de comportamento do visitante; funil de checkout; cartões de conversão. **Dados de demonstração** marcados com banner explícito + endpoints reais da API Nuvemshop documentados inline.
-3. **Produtos** — Rankings: mais vendidos, mais visualizados, estoque crítico e margem.
+1. **Visão geral** — Métricas da loja (visitas, vendas, receita, ticket médio com sparklines; funis de comportamento e checkout; conversões) preenchidas **manualmente pelo analista** a partir dos relatórios da NuvemShop, por período livre. CRUD completo de períodos — controle interno, sem integração de API.
+2. **Financeiro** — KPIs (receita, custo, despesa, lucro), linha temporal mensal, donut de categorias, estatísticas por forma de pagamento (Pix, cartão, boleto — todas recebidas pela conta NuvemShop) e exportação PDF.
 
 ### Lançamentos financeiros
 
@@ -135,7 +135,7 @@ ecommerce_internal_suite/
 ├── backend/
 │   ├── apps/
 │   │   ├── catalog/        # marcas, categorias, produtos, variações
-│   │   ├── finance/        # categorias financeiras, lançamentos, dashboards, analytics mock
+│   │   ├── finance/        # categorias financeiras, lançamentos, dashboards consolidados
 │   │   ├── importer/       # importação via planilha
 │   │   └── reports/        # geração PDF (ReportLab)
 │   ├── config/             # settings, urls, api (Ninja), auth
@@ -162,13 +162,11 @@ ecommerce_internal_suite/
 
 Documentação técnica detalhada: [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 
-Para conectar a uma loja Nuvemshop real (OAuth, mapeamento endpoint-a-endpoint, rate limit, webhooks): [docs/INTEGRACAO_NUVEMSHOP.md](docs/INTEGRACAO_NUVEMSHOP.md).
-
 ## Decisões de design relevantes
 
-- **Sem libs de gráfico**. Todos os charts (linha, donut, barras horizontais/verticais, sparkline) são SVG cru. Zero dependência de Recharts/Chart.js — controle visual total e bundle menor.
+- **Sem libs de gráfico**. Todos os charts (linha, donut, barras horizontais/verticais) são SVG cru. Zero dependência de Recharts/Chart.js — controle visual total e bundle menor.
 - **Tooltips React custom em vez de `<title>` SVG**. O título HTML nativo é sutil demais (delay de browser); usamos overlays absolutos com hover instantâneo.
-- **Mock determinístico no backend, não no frontend**. O endpoint `/api/finance/analytics/*` retorna números fake gerados com `random.seed(42)` baseados em dados reais do catálogo. Trocar pela API real só exige reescrever o service, mantendo o contrato dos schemas.
+- **Edição inline no catálogo**. Os preços são editáveis direto na célula do AG Grid e persistidos via `PATCH`, recalculando margens no momento — sem abrir o editor de produto para ajustes rápidos.
 - **PDFs gerados no servidor com ReportLab**. Layout idêntico em qualquer SO/navegador.
 - **AG Grid Community apenas**. Sem licença enterprise — funcionalidades premium foram intencionalmente evitadas.
 
