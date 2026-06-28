@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { ICellRendererParams } from 'ag-grid-community'
 import type { Variacao } from '../../types/catalog'
-import { archiveVariacao } from '../../api/variacoes'
+import { archiveVariacao, restoreVariacao } from '../../api/variacoes'
 
 export function AcoesCellRenderer(params: ICellRendererParams<Variacao>) {
   const navigate = useNavigate()
@@ -15,7 +15,16 @@ export function AcoesCellRenderer(params: ICellRendererParams<Variacao>) {
     },
   })
 
+  const restoreMutation = useMutation({
+    mutationFn: restoreVariacao,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['variacoes'] })
+    },
+  })
+
   if (!params.data) return null
+
+  const arquivado = params.data.ativo === false
 
   const handleEditar = () => {
     navigate(`/catalogo/produto/${params.data!.produto_id}`)
@@ -28,6 +37,10 @@ export function AcoesCellRenderer(params: ICellRendererParams<Variacao>) {
     }
   }
 
+  const handleRestaurar = () => {
+    restoreMutation.mutate(params.data!.id)
+  }
+
   return (
     <div className="flex items-center gap-1 h-full">
       <button
@@ -38,15 +51,27 @@ export function AcoesCellRenderer(params: ICellRendererParams<Variacao>) {
         <IconPencil />
         Editar
       </button>
-      <button
-        onClick={handleArquivar}
-        disabled={archiveMutation.isPending}
-        className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 hover:text-black hover:bg-gray-100 transition-colors disabled:opacity-50 cursor-pointer"
-        title="Arquivar variação (soft delete)"
-      >
-        <IconArchive />
-        Arquivar
-      </button>
+      {arquivado ? (
+        <button
+          onClick={handleRestaurar}
+          disabled={restoreMutation.isPending}
+          className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 hover:text-black hover:bg-gray-100 transition-colors disabled:opacity-50 cursor-pointer"
+          title="Restaurar variação"
+        >
+          <IconRestore />
+          Restaurar
+        </button>
+      ) : (
+        <button
+          onClick={handleArquivar}
+          disabled={archiveMutation.isPending}
+          className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 hover:text-black hover:bg-gray-100 transition-colors disabled:opacity-50 cursor-pointer"
+          title="Arquivar variação (soft delete)"
+        >
+          <IconArchive />
+          Arquivar
+        </button>
+      )}
     </div>
   )
 }
@@ -65,6 +90,15 @@ function IconArchive() {
       <rect x="2" y="3" width="20" height="5" />
       <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
       <path d="M10 12h4" />
+    </svg>
+  )
+}
+
+function IconRestore() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7v6h6" />
+      <path d="M3.51 13a9 9 0 1 0 2.13-9.36L3 7" />
     </svg>
   )
 }

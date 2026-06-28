@@ -1,27 +1,19 @@
-import { useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { AgGridReact } from 'ag-grid-react'
 import {
   AllCommunityModule,
   ModuleRegistry,
-  type CellValueChangedEvent,
   type ColDef,
-  type GridApi,
   type GridOptions,
-  type GridReadyEvent,
-  type ValueSetterParams,
 } from 'ag-grid-community'
 
-import {
-  fetchVariacoes,
-  patchVariacao,
-  type VariacaoPrecosPatch,
-} from '../../api/variacoes'
+import { fetchVariacoes } from '../../api/variacoes'
 import { ExportPdfModal } from '../reports/ExportPdfModal'
 import { useDownloadPdf } from '../../hooks/useDownloadPdf'
 import type { Variacao } from '../../types/catalog'
 import { COLUNAS_CATALOGO } from '../../types/reports'
-import { MoneyCellEditor } from './MoneyCellEditor'
+import { formatDateTimeBR } from '../../utils/dateRange'
 import { MoneyCellRenderer } from './MoneyCellRenderer'
 import { PercentCellRenderer } from './PercentCellRenderer'
 import { StatusBadgeRenderer } from './StatusBadgeRenderer'
@@ -32,29 +24,12 @@ ModuleRegistry.registerModules([AllCommunityModule])
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
 
-function toNumber(value: unknown): number | null {
-  if (value === null || value === undefined || value === '') return null
-  const num = typeof value === 'number' ? value : parseFloat(String(value))
-  return isNaN(num) ? null : num
-}
-
-function formatDecimal(value: number | null): string | null {
-  return value === null ? null : value.toFixed(2)
-}
-
-function calcMargemPercentual(custo: number | null, preco: number | null): string | null {
-  if (custo === null || custo <= 0 || preco === null) return null
-  return (((preco - custo) / custo) * 100).toFixed(2)
-}
-
 export function CatalogoGrid() {
   const [searchText, setSearchText] = useState('')
-  const [incluirInativos, setIncluirInativos] = useState(false)
+  const [mostrarArquivados, setMostrarArquivados] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [apenasPromocional, setApenasPromocional] = useState(false)
   const { download, isDownloading } = useDownloadPdf()
-  const gridApiRef = useRef<GridApi<Variacao> | null>(null)
-  const queryClient = useQueryClient()
 
   const {
     data: variacoes = [],
@@ -62,55 +37,25 @@ export function CatalogoGrid() {
     isError,
     error,
   } = useQuery({
-    queryKey: ['variacoes', { inativos: incluirInativos }],
-    queryFn: () => fetchVariacoes({ inativos: incluirInativos }),
+    queryKey: ['variacoes', { arquivados: mostrarArquivados }],
+    queryFn: () => fetchVariacoes({ inativos: mostrarArquivados }),
   })
 
-  const patchMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: VariacaoPrecosPatch }) =>
-      patchVariacao(id, payload),
-    onSuccess: (updated) => {
-      gridApiRef.current?.applyTransaction({ update: [updated] })
-    },
-    onError: () => {
-      queryClient.invalidateQueries({ queryKey: ['variacoes'] })
-    },
-  })
+  // Em "Arquivados", a API traz ativas + inativas; filtramos só as arquivadas.
+  const rowData = useMemo(
+    () => (mostrarArquivados ? variacoes.filter((v) => !v.ativo) : variacoes),
+    [variacoes, mostrarArquivados],
+  )
 
-  const handleCellValueChanged = (event: CellValueChangedEvent<Variacao>) => {
-    const field = event.colDef.field
-    if (!field || !event.data) return
-    const data = event.data
-    let payload: VariacaoPrecosPatch | null = null
-    switch (field) {
-      case 'custo': {
-        const novo = toNumber(data.custo)
-        if (novo === null) return
-        payload = { custo: novo }
-        break
+  const ultimaAtualizacao = useMemo(() => {
+    let max: string | null = null
+    for (const v of variacoes) {
+      if (v.atualizado_em && (max === null || v.atualizado_em > max)) {
+        max = v.atualizado_em
       }
-      case 'preco_loja': {
-        const novo = toNumber(data.preco_loja)
-        if (novo === null) return
-        payload = { preco_loja: novo }
-        break
-      }
-      case 'preco_site': {
-        const novo = toNumber(data.preco_site)
-        payload = { preco_site: novo }
-        break
-      }
-      case 'preco_promocional': {
-        const novo = toNumber(data.preco_promocional)
-        payload = { preco_promocional: novo }
-        break
-      }
-      default:
-        return
     }
-    if (!payload) return
-    patchMutation.mutate({ id: data.id, payload })
-  }
+    return formatDateTimeBR(max)
+  }, [variacoes])
 
   const columnDefs = useMemo<ColDef<Variacao>[]>(
     () => [
@@ -153,25 +98,7 @@ export function CatalogoGrid() {
         width: 120,
         flex: 0,
         cellRenderer: MoneyCellRenderer,
-        cellEditor: MoneyCellEditor,
-        editable: true,
-        cellClass: 'editable-cell',
         type: 'numericColumn',
-        cellDataType: false,
-        valueSetter: (params: ValueSetterParams<Variacao>) => {
-          const novo = toNumber(params.newValue)
-          if (novo === null || novo < 0) return false
-          params.data.custo = formatDecimal(novo) ?? params.data.custo
-          params.data.margem_percentual = calcMargemPercentual(
-            novo,
-            toNumber(params.data.preco_site),
-          )
-          params.data.margem_promocional_percentual = calcMargemPercentual(
-            novo,
-            toNumber(params.data.preco_promocional),
-          )
-          return true
-        },
       },
       {
         field: 'preco_loja',
@@ -179,17 +106,7 @@ export function CatalogoGrid() {
         width: 125,
         flex: 0,
         cellRenderer: MoneyCellRenderer,
-        cellEditor: MoneyCellEditor,
-        editable: true,
-        cellClass: 'editable-cell',
         type: 'numericColumn',
-        cellDataType: false,
-        valueSetter: (params: ValueSetterParams<Variacao>) => {
-          const novo = toNumber(params.newValue)
-          if (novo === null || novo < 0) return false
-          params.data.preco_loja = formatDecimal(novo) ?? params.data.preco_loja
-          return true
-        },
       },
       {
         field: 'preco_site',
@@ -197,42 +114,16 @@ export function CatalogoGrid() {
         width: 125,
         flex: 0,
         cellRenderer: MoneyCellRenderer,
-        cellEditor: MoneyCellEditor,
-        editable: true,
-        cellClass: 'editable-cell',
         type: 'numericColumn',
-        cellDataType: false,
-        valueSetter: (params: ValueSetterParams<Variacao>) => {
-          const novo = toNumber(params.newValue)
-          if (novo !== null && novo < 0) return false
-          const custo = toNumber(params.data.custo)
-          params.data.preco_site = formatDecimal(novo)
-          params.data.margem_percentual = calcMargemPercentual(custo, novo)
-          return true
-        },
       },
       {
         field: 'preco_promocional',
         headerName: 'Preço Promocional',
         width: 150,
         flex: 0,
-        cellClass: 'promo-price-cell editable-cell',
+        cellClass: 'promo-price-cell',
         cellRenderer: MoneyCellRenderer,
-        cellEditor: MoneyCellEditor,
-        editable: true,
         type: 'numericColumn',
-        cellDataType: false,
-        valueSetter: (params: ValueSetterParams<Variacao>) => {
-          const novo = toNumber(params.newValue)
-          if (novo !== null && novo < 0) return false
-          const custo = toNumber(params.data.custo)
-          params.data.preco_promocional = formatDecimal(novo)
-          params.data.margem_promocional_percentual = calcMargemPercentual(
-            custo,
-            novo,
-          )
-          return true
-        },
       },
       {
         field: 'margem_percentual',
@@ -270,7 +161,7 @@ export function CatalogoGrid() {
       {
         headerName: 'Ações',
         cellRenderer: AcoesCellRenderer,
-        width: 150,
+        width: 200,
         flex: 0,
         sortable: false,
         filter: false,
@@ -288,11 +179,6 @@ export function CatalogoGrid() {
       sortable: true,
       filter: 'agTextColumnFilter',
       floatingFilter: true,
-      // Os valores vêm da API como string ("28.00"); o AG Grid 35 inferiria o
-      // cellDataType como 'text' e DESCARTARIA o número devolvido pelo editor
-      // (warning #135), bloqueando a edição. Desligamos a inferência para que o
-      // valueSetter controle o valor livremente.
-      cellDataType: false,
     }),
     [],
   )
@@ -308,9 +194,6 @@ export function CatalogoGrid() {
       quickFilterText: searchText,
       enableCellTextSelection: true,
       ensureDomOrder: true,
-      suppressClickEdit: false,
-      singleClickEdit: false,
-      stopEditingWhenCellsLoseFocus: true,
       localeText: {
         page: 'Página',
         to: 'até',
@@ -349,7 +232,7 @@ export function CatalogoGrid() {
       '/reports/catalog/pdf',
       {
         colunas,
-        incluir_inativos: incluirInativos,
+        incluir_inativos: mostrarArquivados,
         apenas_promocional: apenasPromocional,
         busca: searchText || undefined,
       },
@@ -397,15 +280,19 @@ export function CatalogoGrid() {
           />
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-gray-600 select-none cursor-pointer">
-          <input
-            type="checkbox"
-            checked={incluirInativos}
-            onChange={(e) => setIncluirInativos(e.target.checked)}
-            className="accent-black"
-          />
-          Incluir inativos
-        </label>
+        <button
+          type="button"
+          onClick={() => setMostrarArquivados((v) => !v)}
+          aria-pressed={mostrarArquivados}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
+            mostrarArquivados
+              ? 'border-black bg-black text-white hover:bg-gray-900'
+              : 'border-gray-200 text-gray-700 hover:border-black hover:text-black'
+          }`}
+        >
+          <IconArchive />
+          Arquivados
+        </button>
 
         <button
           type="button"
@@ -416,10 +303,19 @@ export function CatalogoGrid() {
           Exportar PDF
         </button>
 
-        <div className="font-mono text-xs text-gray-600 tabular-nums">
-          {isLoading
-            ? 'carregando...'
-            : `${variacoes.length.toLocaleString('pt-BR')} variações`}
+        <div className="ml-auto flex flex-col items-end gap-0.5">
+          <div className="font-mono text-xs text-gray-600 tabular-nums">
+            {isLoading
+              ? 'carregando...'
+              : `${rowData.length.toLocaleString('pt-BR')} ${
+                  mostrarArquivados ? 'arquivadas' : 'variações'
+                }`}
+          </div>
+          {ultimaAtualizacao && (
+            <div className="font-mono text-xs text-gray-500">
+              Última atualização: {ultimaAtualizacao}
+            </div>
+          )}
         </div>
       </div>
 
@@ -428,16 +324,12 @@ export function CatalogoGrid() {
         style={{ height: 'calc(100vh - 240px)', minHeight: 500 }}
       >
         <AgGridReact<Variacao>
-          rowData={variacoes}
+          rowData={rowData}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
           gridOptions={gridOptions}
           loading={isLoading}
           getRowId={(params) => String(params.data.id)}
-          onGridReady={(event: GridReadyEvent<Variacao>) => {
-            gridApiRef.current = event.api
-          }}
-          onCellValueChanged={handleCellValueChanged}
         />
       </div>
 
@@ -469,6 +361,25 @@ function IconDownload() {
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <path d="M7 10l5 5 5-5" />
       <path d="M12 15V3" />
+    </svg>
+  )
+}
+
+function IconArchive() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="2" y="3" width="20" height="5" />
+      <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+      <path d="M10 12h4" />
     </svg>
   )
 }

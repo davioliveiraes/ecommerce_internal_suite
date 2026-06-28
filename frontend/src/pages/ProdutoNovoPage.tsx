@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate, Navigate } from 'react-router-dom'
+import { useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import { fetchProduto, saveProdutoComVariacoes } from '../api/produtos'
-import { fetchVariacoesPorProduto } from '../api/variacoes'
+import { createProdutoComVariacoes } from '../api/produtos'
 import { fetchMarcas } from '../api/marcas'
 import { fetchSubcategorias } from '../api/subcategorias'
 import {
@@ -18,27 +17,25 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning'
 
-export function ProdutoEditorPage() {
-  useDocumentTitle('Editar produto — {{COMPANY_NAME}} Catálogo')
+const variacaoVazia = {
+  sku_nuvemshop: '',
+  id_gestaoclick: '',
+  codigo_barras: '',
+  descricao: '',
+  custo: '0',
+  preco_loja: '0',
+  preco_site: null,
+  preco_promocional: null,
+  status_nuvemshop: 'ATIVO' as const,
+  status_integracao: 'ATIVO' as const,
+  ativo: true,
+}
 
-  const { id } = useParams<{ id: string }>()
-  const produtoId = Number(id)
+export function ProdutoNovoPage() {
+  useDocumentTitle('Adicionar produto — {{COMPANY_NAME}} Catálogo')
+
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-
-  const isValidId = produtoId && !isNaN(produtoId)
-
-  const produtoQuery = useQuery({
-    queryKey: ['produto', produtoId],
-    queryFn: () => fetchProduto(produtoId),
-    enabled: !!isValidId,
-  })
-
-  const variacoesQuery = useQuery({
-    queryKey: ['variacoes-do-produto', produtoId],
-    queryFn: () => fetchVariacoesPorProduto(produtoId),
-    enabled: !!isValidId,
-  })
 
   const marcasQuery = useQuery({ queryKey: ['marcas'], queryFn: fetchMarcas })
   const subcategoriasQuery = useQuery({
@@ -55,54 +52,26 @@ export function ProdutoEditorPage() {
       descricao_produto_site: '',
       marca_id: null,
       subcategoria_id: null,
-      variacoes: [],
+      variacoes: [variacaoVazia],
     },
   })
 
-  const { control, handleSubmit, reset, formState } = methods
+  const { control, handleSubmit, formState } = methods
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'variacoes',
   })
 
-  useEffect(() => {
-    if (produtoQuery.data && variacoesQuery.data) {
-      reset({
-        nome_gestaoclick: produtoQuery.data.nome_gestaoclick,
-        nome_site: produtoQuery.data.nome_site,
-        descricao_produto_gestaoclick:
-          produtoQuery.data.descricao_produto_gestaoclick,
-        descricao_produto_site: produtoQuery.data.descricao_produto_site,
-        marca_id: produtoQuery.data.marca_id,
-        subcategoria_id: produtoQuery.data.subcategoria_id,
-        variacoes: variacoesQuery.data.map((v) => ({
-          id: v.id,
-          sku_nuvemshop: v.sku_nuvemshop,
-          id_gestaoclick: v.id_gestaoclick,
-          codigo_barras: v.codigo_barras,
-          descricao: v.descricao,
-          custo: v.custo,
-          preco_loja: v.preco_loja,
-          preco_site: v.preco_site,
-          preco_promocional: v.preco_promocional,
-          status_nuvemshop: v.status_nuvemshop,
-          status_integracao: v.status_integracao,
-          ativo: v.ativo,
-        })),
-      })
-    }
-  }, [produtoQuery.data, variacoesQuery.data, reset])
-
   const { dialog: unsavedDialog, allowNavigation } = useUnsavedChangesWarning(
-    formState.isDirty,
+    formState.isDirty && !formState.isSubmitSuccessful,
   )
 
   const [dialog, setDialog] = useState<'save' | 'cancel' | null>(null)
   const pendingData = useRef<ProdutoEditorForm | null>(null)
 
-  const saveMutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: (data: ProdutoEditorForm) =>
-      saveProdutoComVariacoes(produtoId, {
+      createProdutoComVariacoes({
         ...data,
         variacoes: data.variacoes.map((v) => ({
           ...v,
@@ -113,10 +82,6 @@ export function ProdutoEditorPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['variacoes'] })
-      queryClient.invalidateQueries({ queryKey: ['produto', produtoId] })
-      queryClient.invalidateQueries({
-        queryKey: ['variacoes-do-produto', produtoId],
-      })
       allowNavigation()
       navigate('/catalogo')
     },
@@ -125,15 +90,14 @@ export function ProdutoEditorPage() {
     },
   })
 
-  // Submit só passa por aqui se o form for válido; guardamos os dados e
-  // abrimos o modal de confirmação antes de persistir.
+  // Só chega aqui se o form for válido; guardamos e confirmamos antes de criar.
   const onSubmit = (data: ProdutoEditorForm) => {
     pendingData.current = data
     setDialog('save')
   }
 
   const handleConfirmSave = () => {
-    if (pendingData.current) saveMutation.mutate(pendingData.current)
+    if (pendingData.current) createMutation.mutate(pendingData.current)
   }
 
   const handleCancel = () => {
@@ -147,34 +111,6 @@ export function ProdutoEditorPage() {
   const handleConfirmDiscard = () => {
     allowNavigation()
     navigate('/catalogo')
-  }
-
-  if (!isValidId) {
-    return <Navigate to="/catalogo" replace />
-  }
-
-  if (produtoQuery.isLoading || variacoesQuery.isLoading) {
-    return (
-      <div className="max-w-5xl mx-auto px-6 py-16 text-center font-mono text-sm text-gray-600">
-        carregando produto...
-      </div>
-    )
-  }
-
-  if (produtoQuery.isError || variacoesQuery.isError) {
-    return (
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="border border-gray-300 bg-gray-50 px-6 py-5">
-          <div className="kicker mb-2">Erro</div>
-          <h3 className="font-display text-lg font-semibold text-black mb-1">
-            Falha ao carregar produto
-          </h3>
-          <p className="text-sm text-gray-600">
-            Verifique se o produto ainda existe ou se a API está acessível.
-          </p>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -193,12 +129,12 @@ export function ProdutoEditorPage() {
               <IconArrowLeft />
               voltar ao catálogo
             </button>
-            <div className="kicker mb-2">Módulo 01 · Edição</div>
+            <div className="kicker mb-2">Módulo 01 · Novo produto</div>
             <h1 className="font-display text-3xl font-semibold text-black tracking-tight mb-1">
-              Editar produto — {`{{COMPANY_NAME}}`} Catálogo
+              Adicionar produto — {`{{COMPANY_NAME}}`} Catálogo
             </h1>
-            <p className="text-sm text-gray-600 truncate">
-              {produtoQuery.data?.descricao_produto_site}
+            <p className="text-sm text-gray-600">
+              Cadastre o produto e ao menos uma variação com custo e preços.
             </p>
           </div>
 
@@ -212,20 +148,20 @@ export function ProdutoEditorPage() {
             </button>
             <button
               type="submit"
-              disabled={saveMutation.isPending || !formState.isDirty}
+              disabled={createMutation.isPending}
               className="px-4 py-2 text-sm border border-black bg-black text-white hover:bg-gray-900 hover:border-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {saveMutation.isPending ? 'salvando...' : 'Salvar alterações'}
+              {createMutation.isPending ? 'salvando...' : 'Salvar produto'}
             </button>
           </div>
         </div>
 
-        {saveMutation.isError && (
+        {createMutation.isError && (
           <div className="border border-gray-300 bg-gray-50 px-4 py-3 mb-6">
             <div className="kicker mb-1">Erro</div>
             <p className="text-sm text-black">
               Falha ao salvar:{' '}
-              {(saveMutation.error as Error)?.message || 'erro desconhecido'}
+              {(createMutation.error as Error)?.message || 'erro desconhecido'}
             </p>
           </div>
         )}
@@ -246,21 +182,7 @@ export function ProdutoEditorPage() {
             </div>
             <button
               type="button"
-              onClick={() =>
-                append({
-                  sku_nuvemshop: '',
-                  id_gestaoclick: '',
-                  codigo_barras: '',
-                  descricao: '',
-                  custo: '0',
-                  preco_loja: '0',
-                  preco_site: null,
-                  preco_promocional: null,
-                  status_nuvemshop: 'ATIVO',
-                  status_integracao: 'ATIVO',
-                  ativo: true,
-                })
-              }
+              onClick={() => append(variacaoVazia)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-black text-black hover:bg-gray-50 transition-colors"
             >
               <IconPlus />
@@ -289,27 +211,32 @@ export function ProdutoEditorPage() {
 
       <ConfirmDialog
         isOpen={dialog === 'save'}
-        title="Salvar alterações?"
+        title="Adicionar produto?"
         description={
           <>
-            As alterações do produto{' '}
+            O produto{' '}
             <strong className="text-black">
-              {produtoQuery.data?.descricao_produto_site}
+              {pendingData.current?.descricao_produto_site}
             </strong>{' '}
-            e de suas variações serão gravadas.
+            será criado com{' '}
+            {pendingData.current?.variacoes.length ?? fields.length}{' '}
+            {(pendingData.current?.variacoes.length ?? fields.length) === 1
+              ? 'variação'
+              : 'variações'}
+            .
           </>
         }
-        confirmLabel="Salvar alterações"
+        confirmLabel="Adicionar produto"
         cancelLabel="Voltar"
-        isPending={saveMutation.isPending}
+        isPending={createMutation.isPending}
         onConfirm={handleConfirmSave}
         onCancel={() => setDialog(null)}
       />
 
       <ConfirmDialog
         isOpen={dialog === 'cancel'}
-        title="Descartar alterações?"
-        description="As alterações não salvas serão perdidas. Esta ação não pode ser desfeita."
+        title="Descartar produto?"
+        description="As informações preenchidas serão perdidas. Esta ação não pode ser desfeita."
         confirmLabel="Descartar"
         cancelLabel="Continuar editando"
         onConfirm={handleConfirmDiscard}

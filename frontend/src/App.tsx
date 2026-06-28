@@ -13,6 +13,7 @@ import { Topbar } from './components/Topbar'
 import { HomePage } from './pages/HomePage'
 import { CatalogoPage } from './pages/CatalogoPage'
 import { ProdutoEditorPage } from './pages/ProdutoEditorPage'
+import { ProdutoNovoPage } from './pages/ProdutoNovoPage'
 import { VariacaoRedirect } from './pages/VariacaoRedirect'
 import { FinancePage } from './pages/FinancePage'
 import { LancamentosFinanceirosPage } from './pages/LancamentosFinanceirosPage'
@@ -54,6 +55,7 @@ const router = createBrowserRouter([
         children: [
           { path: '/', element: <HomePage /> },
           { path: '/catalogo', element: <CatalogoPage /> },
+          { path: '/catalogo/produto/novo', element: <ProdutoNovoPage /> },
           { path: '/catalogo/produto/:id', element: <ProdutoEditorPage /> },
           {
             path: '/catalogo/produtos/:id/editar',

@@ -85,7 +85,9 @@ export function LancamentoFinanceiroEditorPage() {
     }
   }, [lancamentoQuery.data, reset])
 
-  useUnsavedChangesWarning(formState.isDirty)
+  const { dialog: unsavedDialog, allowNavigation } = useUnsavedChangesWarning(
+    formState.isDirty,
+  )
 
   const saveMutation = useMutation({
     mutationFn: (data: LancamentoFinanceiroForm) =>
@@ -98,6 +100,7 @@ export function LancamentoFinanceiroEditorPage() {
       queryClient.invalidateQueries({
         queryKey: ['lancamento-financeiro', lancamento.id],
       })
+      allowNavigation()
       navigate('/finance/lancamentos')
     },
   })
@@ -195,6 +198,8 @@ export function LancamentoFinanceiroEditorPage() {
 
         <LancamentoFinanceiroSection categorias={categoriasQuery.data || []} />
       </form>
+
+      {unsavedDialog}
     </FormProvider>
   )
 }

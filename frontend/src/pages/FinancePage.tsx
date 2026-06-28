@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
@@ -8,14 +8,19 @@ import {
   CategoryFiltersPanel,
   CategoryPieChart,
 } from '../components/finance-dashboard/CategoryPieChart'
-import { DashboardFilters } from '../components/finance-dashboard/DashboardFilters'
+import { PeriodoMesAnoFilter } from '../components/finance-dashboard/PeriodoMesAnoFilter'
 import { KpiCards } from '../components/finance-dashboard/KpiCards'
 import { PaymentStatisticsPanel } from '../components/finance-dashboard/PaymentStatisticsPanel'
 import { TimelineChart } from '../components/finance-dashboard/TimelineChart'
 import { VisaoGeralTab } from '../components/finance-dashboard/VisaoGeralTab'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useDownloadPdf } from '../hooks/useDownloadPdf'
-import { OPERATION_START_DATE, getTodayInputValue } from '../utils/dateRange'
+import {
+  formatDateBR,
+  getAnosDisponiveis,
+  intervaloDoAno,
+  intervaloDoMes,
+} from '../utils/dateRange'
 import type { FinancePeriodoCategoria, TipoLancamento } from '../types/finance'
 
 type TabKey = 'visao_geral' | 'financeiro'
@@ -92,11 +97,19 @@ function FinancePageHeader() {
 }
 
 function FinanceiroTab() {
-  const [dataInicio, setDataInicio] = useState(OPERATION_START_DATE)
-  const [dataFim, setDataFim] = useState(getTodayInputValue())
+  const anosDisponiveis = useMemo(() => getAnosDisponiveis(), [])
+  const hoje = useMemo(() => new Date(), [])
+  const [ano, setAno] = useState(() => hoje.getFullYear())
+  // mes = 0-11, ou null para "Ano inteiro".
+  const [mes, setMes] = useState<number | null>(() => hoje.getMonth())
   const [categoriaId, setCategoriaId] = useState<number | null>(null)
   const [tipoCategoria, setTipoCategoria] = useState<TipoLancamento | ''>('')
   const { download, isDownloading } = useDownloadPdf()
+
+  const { dataInicio, dataFim } = useMemo(
+    () => (mes === null ? intervaloDoAno(ano) : intervaloDoMes(ano, mes)),
+    [ano, mes],
+  )
 
   const dashboardQuery = useQuery({
     queryKey: [
@@ -119,12 +132,16 @@ function FinanceiroTab() {
   })
 
   const clearFilters = () => {
-    setDataInicio(OPERATION_START_DATE)
-    setDataFim(getTodayInputValue())
+    setAno(hoje.getFullYear())
+    setMes(hoje.getMonth())
     setCategoriaId(null)
     setTipoCategoria('')
   }
   const visibleTimelineTypes = tipoCategoria ? [tipoCategoria] : undefined
+
+  const ultimaAtualizacao = formatDateBR(
+    dashboardQuery.data?.periodo_geral?.data_fim,
+  )
 
   const handleCategoriaChange = (
     nextCategoriaId: number | null,
@@ -133,14 +150,13 @@ function FinanceiroTab() {
     setCategoriaId(nextCategoriaId)
     if (!periodo || nextCategoriaId === null) return
 
-    const inicioAtual = dataInicio || periodo.data_inicio
-    const fimAtual = dataFim || periodo.data_fim
     const categoriaForaDoPeriodo =
-      periodo.data_inicio < inicioAtual || periodo.data_fim > fimAtual
+      periodo.data_inicio < dataInicio || periodo.data_fim > dataFim
 
     if (categoriaForaDoPeriodo) {
-      setDataInicio(periodo.data_inicio)
-      setDataFim(periodo.data_fim)
+      // Expande para o ano inteiro que contém o período da categoria.
+      setAno(Number(periodo.data_inicio.slice(0, 4)))
+      setMes(null)
     }
   }
 
@@ -170,13 +186,20 @@ function FinanceiroTab() {
         </div>
 
         <div className="flex flex-wrap items-end justify-between gap-3 border border-gray-200 bg-gray-50 px-4 py-3">
-          <DashboardFilters
-            dataInicio={dataInicio}
-            dataFim={dataFim}
-            onDataInicioChange={setDataInicio}
-            onDataFimChange={setDataFim}
+          <PeriodoMesAnoFilter
+            ano={ano}
+            mes={mes}
+            anos={anosDisponiveis}
+            onAnoChange={setAno}
+            onMesChange={setMes}
             onClear={clearFilters}
           />
+
+          {ultimaAtualizacao && (
+            <div className="self-center font-mono text-xs text-gray-500">
+              Última atualização: {ultimaAtualizacao}
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-2">
             <button

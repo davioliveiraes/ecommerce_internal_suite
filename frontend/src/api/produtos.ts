@@ -20,3 +20,13 @@ export async function saveProdutoComVariacoes(
   )
   return response.data
 }
+
+export async function createProdutoComVariacoes(
+  payload: ProdutoComVariacoesPayload,
+): Promise<ProdutoComVariacoesResponse> {
+  const response = await apiClient.post<ProdutoComVariacoesResponse>(
+    `/catalog/produtos/com-variacoes`,
+    payload,
+  )
+  return response.data
+}

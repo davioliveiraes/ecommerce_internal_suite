@@ -18,6 +18,19 @@ const decimalStringOpcional = z
   )
   .transform((v) => (v === '' ? null : v))
 
+// Obrigatório, mas mantém o tipo `string | null` para aceitar null vindo de
+// dados antigos no carregamento do form; na validação exige número >= 0.
+const decimalStringObrigatorio = z
+  .union([z.string(), z.null()])
+  .refine(
+    (v) =>
+      v !== null &&
+      v !== '' &&
+      !isNaN(parseFloat(v)) &&
+      parseFloat(v) >= 0,
+    { message: 'Obrigatório' },
+  )
+
 export const variacaoSchema = z.object({
   id: z.number().optional(),
   sku_nuvemshop: z.string().max(50, 'Máximo 50 caracteres'),
@@ -26,7 +39,7 @@ export const variacaoSchema = z.object({
   descricao: z.string().max(500),
   custo: decimalString,
   preco_loja: decimalString,
-  preco_site: decimalStringOpcional,
+  preco_site: decimalStringObrigatorio,
   preco_promocional: decimalStringOpcional,
   status_nuvemshop: z.enum(['ATIVO', 'INATIVO']),
   status_integracao: z.enum(['ATIVO', 'INATIVO']),

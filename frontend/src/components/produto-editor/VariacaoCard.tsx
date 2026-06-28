@@ -18,6 +18,10 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
   } = useFormContext<ProdutoEditorForm>()
 
   const custo = useWatch({ control, name: `variacoes.${index}.custo` })
+  const precoLoja = useWatch({
+    control,
+    name: `variacoes.${index}.preco_loja`,
+  })
   const precoSite = useWatch({
     control,
     name: `variacoes.${index}.preco_site`,
@@ -32,19 +36,16 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
     name: `variacoes.${index}.descricao`,
   })
 
-  const margem = (() => {
+  const calcMargem = (preco: string | null | undefined) => {
     const c = parseFloat(custo || '0')
-    const p = parseFloat(precoSite || '0')
-    if (!c || c === 0 || !precoSite) return null
+    const p = parseFloat(preco || '0')
+    if (!c || c === 0 || !preco) return null
     return ((p - c) / c) * 100
-  })()
+  }
 
-  const margemPromocional = (() => {
-    const c = parseFloat(custo || '0')
-    const p = parseFloat(precoPromocional || '0')
-    if (!c || c === 0 || !precoPromocional) return null
-    return ((p - c) / c) * 100
-  })()
+  const margemLoja = calcMargem(precoLoja)
+  const margemSite = calcMargem(precoSite)
+  const margemPromocional = calcMargem(precoPromocional)
 
   const copiarPrecoSiteParaPromocao = () => {
     setValue(`variacoes.${index}.preco_promocional`, precoSite || null, {
@@ -85,18 +86,11 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Field label="SKU NuvemShop">
+        {/* Linha 1 */}
+        <Field label="SKU">
           <input
             type="text"
             {...register(`variacoes.${index}.sku_nuvemshop`)}
-            className="form-input font-mono"
-          />
-        </Field>
-
-        <Field label="ID GestãoClick">
-          <input
-            type="text"
-            {...register(`variacoes.${index}.id_gestaoclick`)}
             className="form-input font-mono"
           />
         </Field>
@@ -121,6 +115,7 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
           )}
         </Field>
 
+        {/* Linha 2 */}
         <Field label="Preço Loja" required>
           <input
             type="number"
@@ -133,14 +128,16 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
           )}
         </Field>
 
-        <Field label="Preço Site (opcional)">
+        <Field label="Preço Site" required>
           <input
             type="number"
             step="0.01"
             {...register(`variacoes.${index}.preco_site`)}
             className="form-input font-mono"
-            placeholder="—"
           />
+          {varErrors?.preco_site && (
+            <FieldError>{varErrors.preco_site.message}</FieldError>
+          )}
         </Field>
 
         <Field label="Preço Promocional">
@@ -168,17 +165,28 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
           )}
         </Field>
 
-        <Field label="Margem %">
+        {/* Linha 3 — margens calculadas */}
+        <Field label="Margem Loja">
           <div className="form-input bg-gray-50 cursor-not-allowed text-gray-600 flex items-center font-mono">
-            {margem === null ? (
+            {margemLoja === null ? (
               <span className="text-gray-400">—</span>
             ) : (
-              <span>{formatPercent(margem)}</span>
+              <span>{formatPercent(margemLoja)}</span>
             )}
           </div>
         </Field>
 
-        <Field label="Margem Promoção">
+        <Field label="Margem Site">
+          <div className="form-input bg-gray-50 cursor-not-allowed text-gray-600 flex items-center font-mono">
+            {margemSite === null ? (
+              <span className="text-gray-400">—</span>
+            ) : (
+              <span>{formatPercent(margemSite)}</span>
+            )}
+          </div>
+        </Field>
+
+        <Field label="Margem Promocional">
           <div className="form-input bg-gray-50 cursor-not-allowed text-gray-600 flex items-center font-mono">
             {margemPromocional === null ? (
               <span className="text-gray-400">—</span>
@@ -188,6 +196,7 @@ export function VariacaoCard({ index, onRemove, canRemove }: Props) {
           </div>
         </Field>
 
+        {/* Linha 4 — status */}
         <Field label="Status NuvemShop">
           <select
             {...register(`variacoes.${index}.status_nuvemshop`)}

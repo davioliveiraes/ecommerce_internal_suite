@@ -38,6 +38,68 @@ def list_produtos(request, inativos: bool = False, q: str = ""):
     return qs.order_by("descricao_produto_site")
 
 
+@router.post(
+    "/com-variacoes",
+    response={201: ProdutoComVariacoesOut, 400: dict},
+)
+def create_produto_com_variacoes(request, payload: ProdutoComVariacoesIn):
+    """
+    Cria um novo produto + suas variações em uma única transação atômica.
+
+    Todas as variações do payload são criadas (qualquer `id` informado é
+    ignorado, pois o produto ainda não existe).
+
+    Registrado ANTES de `/{produto_id}` porque o conversor de path do Ninja
+    casa qualquer segmento; sem isso, `com-variacoes` cairia na rota dinâmica.
+
+    Validações:
+    - Pelo menos uma variação é obrigatória.
+    - SKU duplicado entre as variações do payload: 400.
+    """
+    if not payload.variacoes:
+        return 400, {"detail": "Pelo menos uma variação é obrigatória."}
+
+    skus_no_payload = [v.sku_nuvemshop for v in payload.variacoes if v.sku_nuvemshop]
+    if len(skus_no_payload) != len(set(skus_no_payload)):
+        return 400, {"detail": "SKU duplicado no payload."}
+
+    with transaction.atomic():
+        produto = Produto.objects.create(
+            nome_gestaoclick=payload.nome_gestaoclick,
+            nome_site=payload.nome_site,
+            descricao_produto_gestaoclick=payload.descricao_produto_gestaoclick,
+            descricao_produto_site=payload.descricao_produto_site,
+            marca_id=payload.marca_id,
+            subcategoria_id=payload.subcategoria_id,
+        )
+
+        for v_payload in payload.variacoes:
+            Variacao.objects.create(
+                produto=produto,
+                sku_nuvemshop=v_payload.sku_nuvemshop,
+                id_gestaoclick=v_payload.id_gestaoclick,
+                codigo_barras=v_payload.codigo_barras,
+                descricao=v_payload.descricao,
+                custo=v_payload.custo,
+                preco_loja=v_payload.preco_loja,
+                preco_site=v_payload.preco_site,
+                preco_promocional=v_payload.preco_promocional,
+                status_nuvemshop=v_payload.status_nuvemshop,
+                status_integracao=v_payload.status_integracao,
+                ativo=v_payload.ativo,
+            )
+
+    produto_serializado = (
+        Produto.objects.select_related("marca", "subcategoria").get(id=produto.id)
+    )
+    variacoes = produto.variacoes.select_related("produto").order_by("id")
+
+    return 201, {
+        "produto": produto_serializado,
+        "variacoes": list(variacoes),
+    }
+
+
 @router.get("/{produto_id}", response=ProdutoOut)
 def get_produto(request, produto_id: int):
     return get_object_or_404(

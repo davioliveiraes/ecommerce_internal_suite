@@ -19,13 +19,23 @@ export function CatalogoPage() {
           </p>
         </div>
 
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 bg-white text-gray-700 hover:border-black hover:text-black transition-colors shrink-0"
-        >
-          <IconHome />
-          Inicio
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 bg-white text-gray-700 hover:border-black hover:text-black transition-colors"
+          >
+            <IconHome />
+            Inicio
+          </Link>
+
+          <Link
+            to="/catalogo/produto/novo"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-black bg-black text-white hover:bg-gray-900 hover:border-gray-900 transition-colors"
+          >
+            <IconPlus />
+            Adicionar Produto
+          </Link>
+        </div>
       </div>
 
       <CatalogoGrid />
@@ -48,6 +58,24 @@ function IconHome() {
       <path d="m3 10.5 9-7 9 7" />
       <path d="M5 10v10h14V10" />
       <path d="M9 20v-6h6v6" />
+    </svg>
+  )
+}
+
+function IconPlus() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
     </svg>
   )
 }

@@ -12,7 +12,13 @@ import type {
   VisaoGeralPeriodoInput,
 } from '../../types/visaoGeral'
 import { formatCurrency, formatPercent } from '../../utils/format'
-import { OPERATION_START_DATE, getTodayInputValue } from '../../utils/dateRange'
+import {
+  formatDateBR,
+  getAnosDisponiveis,
+  intervaloDoAno,
+  intervaloDoMes,
+} from '../../utils/dateRange'
+import { PeriodoMesAnoFilter } from './PeriodoMesAnoFilter'
 import { useDownloadPdf } from '../../hooks/useDownloadPdf'
 import { MiniSparkline, type SparkFormato } from './MiniSparkline'
 import { VisaoGeralPeriodoForm } from './VisaoGeralPeriodoForm'
@@ -43,9 +49,17 @@ const TOTAIS_ZERADOS = {
 export function VisaoGeralTab() {
   const queryClient = useQueryClient()
   const [modal, setModal] = useState<ModalState>({ open: false, editing: null })
-  const [filtroInicio, setFiltroInicio] = useState(OPERATION_START_DATE)
-  const [filtroFim, setFiltroFim] = useState(getTodayInputValue())
+  const anosDisponiveis = useMemo(() => getAnosDisponiveis(), [])
+  const hoje = useMemo(() => new Date(), [])
+  const [ano, setAno] = useState(() => hoje.getFullYear())
+  // mes = 0-11, ou null para "Ano inteiro".
+  const [mes, setMes] = useState<number | null>(() => hoje.getMonth())
   const { download, isDownloading } = useDownloadPdf()
+
+  const { dataInicio: filtroInicio, dataFim: filtroFim } = useMemo(
+    () => (mes === null ? intervaloDoAno(ano) : intervaloDoMes(ano, mes)),
+    [ano, mes],
+  )
 
   const query = useQuery({
     queryKey: ['visao-geral-periodos'],
@@ -53,6 +67,8 @@ export function VisaoGeralTab() {
   })
 
   const periodos = query.data ?? []
+  // Período mais recente cadastrado (a lista vem em ordem decrescente).
+  const ultimaAtualizacao = formatDateBR(periodos[0]?.data_fim)
   const periodosFiltrados = useMemo(
     () =>
       periodos.filter(
@@ -120,8 +136,8 @@ export function VisaoGeralTab() {
   }
 
   const handleLimparFiltros = () => {
-    setFiltroInicio(OPERATION_START_DATE)
-    setFiltroFim(getTodayInputValue())
+    setAno(hoje.getFullYear())
+    setMes(hoje.getMonth())
   }
 
   const invalidar = () =>
@@ -205,37 +221,20 @@ export function VisaoGeralTab() {
         </div>
 
         <div className="flex flex-wrap items-end justify-between gap-3 border border-gray-200 bg-gray-50 px-4 py-3">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
-                Início
-              </label>
-              <input
-                type="date"
-                value={filtroInicio}
-                onChange={(e) => setFiltroInicio(e.target.value)}
-                className="border border-gray-200 bg-white px-3 py-1.5 text-sm text-black focus:border-black focus:outline-none"
-              />
+          <PeriodoMesAnoFilter
+            ano={ano}
+            mes={mes}
+            anos={anosDisponiveis}
+            onAnoChange={setAno}
+            onMesChange={setMes}
+            onClear={handleLimparFiltros}
+          />
+
+          {ultimaAtualizacao && (
+            <div className="self-center font-mono text-xs text-gray-500">
+              Última atualização: {ultimaAtualizacao}
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
-                Fim
-              </label>
-              <input
-                type="date"
-                value={filtroFim}
-                onChange={(e) => setFiltroFim(e.target.value)}
-                className="border border-gray-200 bg-white px-3 py-1.5 text-sm text-black focus:border-black focus:outline-none"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleLimparFiltros}
-              className="h-9 self-end px-3 text-sm border border-gray-200 text-gray-600 hover:text-black hover:border-gray-400 transition-colors"
-            >
-              Limpar filtros
-            </button>
-          </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-2">
             <button
